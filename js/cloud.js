@@ -237,14 +237,38 @@
   const members = {
     async listByTrip(tripId) {
       const { data, error } = await client
-        .from('trip_members')
-        .select('*, profiles:user_id(display_name, avatar_url)')
-        .eq('trip_id', tripId);
+        .from('trip_members_view')
+        .select('*')
+        .eq('trip_id', tripId)
+        .order('joined_at', { ascending: true });
       if (error) throw error;
       return data || [];
     },
-    // 초대: 서버사이드 함수 없이는 다른 사용자 추가 불가 (RLS).
-    // Phase 2에서 invite 토큰 기반 흐름 추가 예정.
+    // RPC를 통한 안전한 이메일 초대 (DB 함수가 owner 검증 + 사용자 조회 + 삽입)
+    // 응답 status: 'invited' | 'user_not_found' | 'already_member' | 'self_invite'
+    async invite(tripId, email, role = 'editor') {
+      const { data, error } = await client.rpc('invite_to_trip', {
+        p_trip_id: tripId, p_email: email, p_role: role,
+      });
+      if (error) throw error;
+      return data;
+    },
+    async changeRole(tripId, userId, role) {
+      const { error } = await client
+        .from('trip_members')
+        .update({ role })
+        .eq('trip_id', tripId)
+        .eq('user_id', userId);
+      if (error) throw error;
+    },
+    async kick(tripId, userId) {
+      const { error } = await client
+        .from('trip_members')
+        .delete()
+        .eq('trip_id', tripId)
+        .eq('user_id', userId);
+      if (error) throw error;
+    },
     async leave(tripId) {
       const user = await auth.user();
       if (!user) throw new Error('로그인 필요');

@@ -672,6 +672,64 @@
   .pack-item.done .pack-text { text-decoration: line-through; color: var(--muted); }
   .pack-item .del { font-size: 14px; color: rgba(255,255,255,0.2); cursor: pointer; padding: 0 4px; }
 
+  /* ── Day tabs: 60일 스케일링 ─────────────────────── */
+  #day-tabs { display: flex; gap: 4px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: thin; padding-bottom: 4px; }
+  #day-tabs::-webkit-scrollbar { height: 4px; }
+  #day-tabs::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  /* 월 구분선 */
+  .day-tab-divider { flex-shrink: 0; padding: 0 6px; font-size: 9px; color: var(--muted); display: flex; align-items: center; }
+
+  /* ── Desktop wide layout (>= 900px) ────────────── */
+  @media (min-width: 900px) {
+    html, body { overflow: auto; }
+    body { height: auto; min-height: 100dvh; }
+    #screen-detail.screen.active {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 20px;
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 16px;
+    }
+    #screen-detail #topbar {
+      grid-column: 1 / -1;
+      position: sticky;
+      top: 0;
+    }
+    #screen-detail #weather-strip { grid-column: 1 / -1; }
+    #screen-detail #progress-bar { grid-column: 1 / -1; }
+    #screen-detail #scroll-area {
+      grid-column: 2;
+      padding: 16px 8px 80px;
+    }
+    /* 사이드 패널: 빠른 액션 + 가계부 요약 등 (Phase 7+) */
+    #screen-detail #bottom-nav {
+      grid-column: 1;
+      position: sticky;
+      bottom: 16px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      height: auto;
+      padding: 12px 8px;
+      flex-direction: column;
+      align-self: start;
+      align-items: stretch;
+      gap: 8px;
+      background: var(--surface);
+      backdrop-filter: none;
+    }
+    #screen-detail .nav-btn { flex-direction: row; justify-content: flex-start; padding: 10px 14px; font-size: 13px; gap: 10px; border-radius: 10px; }
+    #screen-detail .nav-btn.active { background: var(--surface2); }
+
+    /* 트립 목록 화면 — 카드 그리드 */
+    #screen-list { max-width: 960px; margin: 0 auto; }
+    #screen-list .trip-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; padding: 8px 16px; }
+
+    /* 설정·새 여행 화면 — 가운데 정렬, 폭 제한 */
+    #screen-settings .screen-content,
+    #screen-new .screen-content { max-width: 600px; margin: 0 auto; }
+  }
+
   /* ── Auth / Account ── */
   .account-card {
     background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
@@ -741,6 +799,10 @@
   <button class="new-trip-btn" onclick="newTrip()">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>
     AI로 새 여행 만들기
+  </button>
+  <button class="new-trip-btn" onclick="openNotionImport()" style="margin-top:8px">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h16v16H4z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>
+    노션에서 가져오기 (AI 변환)
   </button>
 </div>
 
@@ -858,9 +920,9 @@
     <!-- Step 1: 입력 -->
     <div class="wizard-step active" id="step-input">
       <div class="field">
-        <span class="field-label">여행 설명</span>
+        <span class="field-label" id="wizard-input-label">여행 설명</span>
         <textarea class="field-textarea" id="wizard-prompt" placeholder="예) 5월 25일부터 3박4일 도쿄, 라멘이랑 애니메이션 좋아함, 1인 50만원 예산. 시부야 숙소."></textarea>
-        <span class="field-hint">목적지·날짜·일수·예산·취향·동행자 등을 자유롭게 적어주세요. 자세할수록 좋아요.</span>
+        <span class="field-hint" id="wizard-input-hint">목적지·날짜·일수·예산·취향·동행자 등을 자유롭게 적어주세요. 자세할수록 좋아요.</span>
       </div>
       <button class="primary-btn" id="generate-btn" onclick="generateTrip()">
         ✨ AI로 일정 생성
@@ -907,6 +969,10 @@
   <div id="day-tabs"></div>
 </div>
 <div class="menu-dropdown" id="trip-menu">
+  <div class="menu-item" onclick="openShareModal()">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+    공유 / 멤버
+  </div>
   <div class="menu-item" onclick="exportCurrentTrip()">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12l7-7 7 7"/></svg>
     이 여행 내보내기
@@ -918,6 +984,33 @@
   <div class="menu-item danger" onclick="deleteCurrentTrip()">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 01-2 2H9a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
     삭제
+  </div>
+</div>
+
+<!-- ── 공유 모달 ─────────────────────────────────── -->
+<div class="modal-overlay" id="share-modal" onclick="if(event.target===this)closeShareModal()">
+  <div class="modal" style="position:relative; max-width:420px">
+    <button class="icon-btn modal-close" onclick="closeShareModal()" aria-label="닫기">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </button>
+    <div class="modal-title">여행 공유</div>
+    <div class="modal-sub" id="share-sub">초대받은 사람도 같은 일정을 보고 함께 편집할 수 있어요.</div>
+
+    <div class="field">
+      <span class="field-label">이메일로 초대</span>
+      <input type="email" class="field-input" id="invite-email" placeholder="parent@example.com" autocomplete="email">
+      <div class="radio-group" style="margin-top:6px">
+        <div class="radio-card selected" data-role="editor" onclick="selectInviteRole('editor')">편집자<br><span style="font-size:10px;font-weight:500">읽기+쓰기</span></div>
+        <div class="radio-card" data-role="viewer" onclick="selectInviteRole('viewer')">뷰어<br><span style="font-size:10px;font-weight:500">읽기만</span></div>
+      </div>
+      <span class="field-hint">⚠️ 초대받는 사람이 먼저 회원가입(이 앱)을 완료해야 합니다.</span>
+    </div>
+    <button class="primary-btn" onclick="doInvite()">초대 보내기</button>
+
+    <div>
+      <div class="section-title">현재 멤버</div>
+      <div id="members-list" style="display:flex; flex-direction:column; gap:8px"></div>
+    </div>
   </div>
 </div>
 
@@ -1067,12 +1160,12 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="js/supabase-config.js?v=7"></script>
-<script src="js/cloud.js?v=7"></script>
-<script src="js/seed.js?v=7"></script>
-<script src="js/db.js?v=7"></script>
-<script src="js/ai.js?v=7"></script>
-<script src="js/sync.js?v=7"></script>
+<script src="js/supabase-config.js?v=9"></script>
+<script src="js/cloud.js?v=9"></script>
+<script src="js/seed.js?v=9"></script>
+<script src="js/db.js?v=9"></script>
+<script src="js/ai.js?v=9"></script>
+<script src="js/sync.js?v=9"></script>
 <script>
 /* ── DATA (현재 열린 여행에서 동적으로 채워짐) ── */
 let TRIP = null;          // 현재 열린 여행 객체 (IndexedDB에서)
@@ -1240,8 +1333,97 @@ async function loadState() {
 }
 function saveChecked() { TripDB.state.patch(TRIP.id, { checked: checkedItems }); _bgPushUserState(TRIP); }
 function saveMemos()   { TripDB.state.patch(TRIP.id, { memos }); _bgPushUserState(TRIP); }
-function saveExpenses(){ TripDB.state.patch(TRIP.id, { expenses }); /* Day 4: 클라우드 expenses 테이블로 이전 */ }
-function savePacking() { TripDB.state.patch(TRIP.id, { packing }); /* Day 4: 클라우드 packing_items 테이블로 이전 */ }
+function saveExpenses(){ TripDB.state.patch(TRIP.id, { expenses }); _bgSyncExpenses(); }
+function savePacking() { TripDB.state.patch(TRIP.id, { packing }); _bgSyncPacking(); }
+
+/* ── 클라우드 expenses 동기화 (delta-based) ──────
+   IDB 로컬 expenses = { [day]: [{id, amount, category, note}] }
+   Cloud expenses = 한 행 = 한 지출 (id로 매핑)
+   전략: 로컬 push 시 trip_id로 전체 삭제 후 재삽입 (간단·일관성). 트래픽 적어서 OK. */
+async function _bgSyncExpenses() {
+  if (!_currentUser || !window.Sync?.enabled || !TRIP?.cloud_id) return;
+  try {
+    const rows = [];
+    Object.entries(expenses || {}).forEach(([dayStr, list]) => {
+      (list || []).forEach(e => {
+        const norm = (typeof e === 'number') ? { id: 'legacy-' + Math.random().toString(36).slice(2,8), amount: e, category: '기타' } : e;
+        rows.push({
+          id: norm.cloud_id || (crypto.randomUUID ? crypto.randomUUID() : null),
+          trip_id: TRIP.cloud_id,
+          day_id: TRIP.days?.find(d => d.day === Number(dayStr))?.cloud_id || null,
+          paid_by: _currentUser.id,
+          paid_date: TRIP.days?.find(d => d.day === Number(dayStr))?.date || new Date().toISOString().slice(0,10),
+          amount: norm.amount || 0,
+          currency: TRIP.currency || 'USD',
+          category: norm.category || '기타',
+          payment_method: norm.payment_method || null,
+          note: norm.note || null,
+        });
+      });
+    });
+    // 전체 교체
+    await Cloud.client.from('expenses').delete().eq('trip_id', TRIP.cloud_id);
+    if (rows.length) {
+      const { error } = await Cloud.client.from('expenses').insert(rows);
+      if (error) throw error;
+    }
+  } catch (e) { console.warn('expenses sync 실패:', e.message); }
+}
+
+async function _bgSyncPacking() {
+  if (!_currentUser || !window.Sync?.enabled || !TRIP?.cloud_id) return;
+  try {
+    const items = (packing?.items || []).map((it, i) => ({
+      id: it.cloud_id || it.id || (crypto.randomUUID ? crypto.randomUUID() : null),
+      trip_id: TRIP.cloud_id,
+      owner_id: null, // 공용
+      category: it.category || '기타',
+      text: it.text || '',
+      done: !!it.done,
+      position: i,
+    }));
+    await Cloud.client.from('packing_items').delete().eq('trip_id', TRIP.cloud_id).is('owner_id', null);
+    if (items.length) {
+      const { error } = await Cloud.client.from('packing_items').insert(items);
+      if (error) throw error;
+    }
+  } catch (e) { console.warn('packing sync 실패:', e.message); }
+}
+
+// 트립 열 때 클라우드 expenses/packing 풀해서 로컬 머지
+async function _pullExpensesAndPacking() {
+  if (!_currentUser || !window.Sync?.enabled || !TRIP?.cloud_id) return;
+  try {
+    const [{ data: expRows }, { data: packRows }] = await Promise.all([
+      Cloud.client.from('expenses').select('*').eq('trip_id', TRIP.cloud_id).order('paid_date', { ascending: true }),
+      Cloud.client.from('packing_items').select('*').eq('trip_id', TRIP.cloud_id).is('owner_id', null).order('position', { ascending: true }),
+    ]);
+
+    if (expRows && expRows.length) {
+      // 클라우드 expenses를 day별로 그룹화 (day 매핑은 cloud_id로)
+      const dayByCloudId = new Map();
+      (TRIP.days || []).forEach(d => { if (d.cloud_id) dayByCloudId.set(d.cloud_id, d.day); });
+      const grouped = {};
+      expRows.forEach(r => {
+        const dayNum = dayByCloudId.get(r.day_id) || 1;
+        (grouped[dayNum] = grouped[dayNum] || []).push({
+          id: r.id, cloud_id: r.id,
+          amount: Number(r.amount), category: r.category || '기타',
+          payment_method: r.payment_method, note: r.note || '',
+        });
+      });
+      expenses = grouped;
+      await TripDB.state.patch(TRIP.id, { expenses });
+    }
+    if (packRows && packRows.length) {
+      packing = { items: packRows.map(r => ({
+        id: r.id, cloud_id: r.id,
+        text: r.text, category: r.category || '기타', done: !!r.done,
+      })) };
+      await TripDB.state.patch(TRIP.id, { packing });
+    }
+  } catch (e) { console.warn('expenses/packing pull 실패:', e.message); }
+}
 
 const PACK_CATS = ['서류·돈', '전자기기', '의류', '위생·약품', '기타'];
 const PACK_TEMPLATE = [
@@ -1349,17 +1531,34 @@ async function loadRate() {
   }
 }
 
-/* ── RENDER TABS ── */
+/* ── RENDER TABS (60일 스케일: 월 구분선 자동 삽입) ── */
 function renderTabs() {
   const cont = document.getElementById('day-tabs');
-  cont.innerHTML = DAYS.map(d => {
+  const monthLabel = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+  let lastMonth = -1;
+  const parts = [];
+  DAYS.forEach(d => {
+    // 월 변경 시 구분선 (트립이 길 때만)
+    const month = d.date ? new Date(d.date + 'T00:00:00').getMonth() : -1;
+    if (DAYS.length >= 8 && month !== lastMonth && lastMonth !== -1) {
+      parts.push(`<span class="day-tab-divider">│ ${monthLabel[month] || ''}</span>`);
+    } else if (DAYS.length >= 8 && lastMonth === -1) {
+      parts.push(`<span class="day-tab-divider">${monthLabel[month] || ''}</span>`);
+    }
+    lastMonth = month;
     const checked = d.items.filter(it => checkedItems[it.id]).length;
     const isActive = d.day === activeDay;
-    return `<button class="day-tab ${isActive?'active':''}" onclick="switchDay(${d.day})"
+    parts.push(`<button class="day-tab ${isActive?'active':''}" onclick="switchDay(${d.day})"
       style="--day-color:${d.color}">
       ● D${d.day}${checked>0?`<span class="progress-badge">${checked}/${d.items.length}</span>`:''}
-    </button>`;
-  }).join('');
+    </button>`);
+  });
+  cont.innerHTML = parts.join('');
+  // 활성 탭이 시야 밖이면 스크롤
+  setTimeout(() => {
+    const active = cont.querySelector('.day-tab.active');
+    if (active && active.scrollIntoView) active.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+  }, 50);
 }
 
 /* ── RENDER PROGRESS ── */
@@ -2027,6 +2226,8 @@ async function openTrip(id) {
   document.getElementById('nav-timeline').classList.add('active');
 
   await loadState();
+  // 로그인 + 클라우드 트립이면 expenses/packing 원격에서 풀-머지
+  await _pullExpensesAndPacking();
   setDayColor(DAY_COLORS[activeDay] || '#4fc3f7');
   renderTabs();
   renderProgress();
@@ -2408,10 +2609,30 @@ async function reseedTokyo() {
 
 /* ── 새 여행 위저드 ────────────────────────────────── */
 let _generatedTrip = null;
+let _wizardMode = 'ai'; // 'ai' | 'notion'
 
 function newTrip() {
+  _wizardMode = 'ai';
   _generatedTrip = null;
   document.getElementById('wizard-prompt').value = '';
+  document.getElementById('wizard-title').textContent = '새 여행 만들기';
+  document.getElementById('wizard-input-label').textContent = '여행 설명';
+  document.getElementById('wizard-prompt').placeholder = '예) 5월 25일부터 3박4일 도쿄, 라멘이랑 애니메이션 좋아함, 1인 50만원 예산. 시부야 숙소.';
+  document.getElementById('wizard-input-hint').textContent = '목적지·날짜·일수·예산·취향·동행자 등을 자유롭게 적어주세요. 자세할수록 좋아요.';
+  document.getElementById('generate-btn').innerHTML = '✨ AI로 일정 생성';
+  showWizardStep('input');
+  showScreen('new');
+}
+
+function openNotionImport() {
+  _wizardMode = 'notion';
+  _generatedTrip = null;
+  document.getElementById('wizard-prompt').value = '';
+  document.getElementById('wizard-title').textContent = '노션에서 가져오기';
+  document.getElementById('wizard-input-label').textContent = '노션 페이지 내용 (복사·붙여넣기)';
+  document.getElementById('wizard-prompt').placeholder = '노션 여행 페이지를 열고 → Ctrl+A 전체 선택 → 복사 → 여기 붙여넣기. 데이터베이스 표·날짜·메모 다 포함해서 통째로.';
+  document.getElementById('wizard-input-hint').innerHTML = '⚠️ <b>읽기 전용</b>: 노션에 절대 다시 쓰지 않습니다.<br>AI가 텍스트를 분석해서 트립으로 변환. 페이지가 길면 일정·예산 부분만 잘라서 붙여도 됩니다.';
+  document.getElementById('generate-btn').innerHTML = '🪄 AI 변환 시작';
   showWizardStep('input');
   showScreen('new');
 }
@@ -2432,11 +2653,18 @@ function backToInput() {
 }
 
 async function generateTrip() {
-  const prompt = document.getElementById('wizard-prompt').value.trim();
-  if (!prompt) { showToast('여행 설명을 입력해주세요'); return; }
+  const raw = document.getElementById('wizard-prompt').value.trim();
+  if (!raw) { showToast(_wizardMode === 'notion' ? '노션 내용을 붙여넣으세요' : '여행 설명을 입력해주세요'); return; }
   showWizardStep('loading');
+  // 노션 모드면 사용자 prompt를 "이 노션 콘텐츠를 트립으로 변환" 지시문으로 감싸기
+  const prompt = _wizardMode === 'notion'
+    ? `아래는 노션 여행 페이지에서 복사한 원본 내용입니다. 이 내용을 분석해서 트립 JSON 스키마로 변환해주세요. 날짜·국가·도시·일정·예산이 명시적으로 적혀있다면 그대로 사용하고, 빠진 부분은 합리적으로 추론해서 채우세요. 일정이 60일같이 길면 days 배열을 빠짐없이 모두 만드세요(단 각 day는 간결하게 3~6개 항목).\n\n--- 노션 원본 ---\n${raw}\n--- 원본 끝 ---`
+    : raw;
   try {
     const trip = await AI.generateTrip(prompt);
+    if (_wizardMode === 'notion') {
+      trip.notion_page_id = trip.notion_page_id || null; // AI가 ID 식별 시 보존
+    }
     _generatedTrip = trip;
     renderPreview(trip);
     showWizardStep('preview');
@@ -2519,6 +2747,112 @@ async function renameTrip() {
   document.getElementById('trip-title').textContent = `${TRIP.emoji || ''} ${TRIP.name}`.trim();
   showToast('✏️ 이름 변경됨');
   _bgPushTrip(TRIP);
+}
+
+/* ── 공유 ─────────────────────────────────────────── */
+let _inviteRole = 'editor';
+
+function selectInviteRole(role) {
+  _inviteRole = role;
+  document.querySelectorAll('#share-modal [data-role]').forEach(el => {
+    el.classList.toggle('selected', el.dataset.role === role);
+  });
+}
+
+async function openShareModal() {
+  document.getElementById('trip-menu').classList.remove('open');
+  if (!TRIP) return;
+
+  if (!_currentUser) {
+    showToast('공유하려면 로그인이 필요해요');
+    openSignIn();
+    return;
+  }
+  if (!TRIP.cloud_id) {
+    // 아직 클라우드에 없으면 먼저 푸시
+    showToast('동기화 중...');
+    try { await Sync.pushTrip(TRIP); }
+    catch (e) { showToast('동기화 실패: ' + e.message); return; }
+  }
+
+  document.getElementById('invite-email').value = '';
+  selectInviteRole('editor');
+  document.getElementById('share-modal').classList.add('open');
+  await refreshMembersList();
+}
+
+function closeShareModal() {
+  document.getElementById('share-modal').classList.remove('open');
+}
+
+async function refreshMembersList() {
+  if (!TRIP?.cloud_id) return;
+  const cont = document.getElementById('members-list');
+  cont.innerHTML = '<div style="font-size:12px;color:var(--muted)">로딩 중...</div>';
+  try {
+    const list = await Cloud.members.listByTrip(TRIP.cloud_id);
+    if (list.length === 0) {
+      cont.innerHTML = '<div style="font-size:12px;color:var(--muted)">멤버가 없어요.</div>';
+      return;
+    }
+    const meId = _currentUser?.id;
+    const ownerExists = list.some(m => m.role === 'owner');
+    const iAmOwner = list.find(m => m.user_id === meId)?.role === 'owner';
+    cont.innerHTML = list.map(m => {
+      const isMe = m.user_id === meId;
+      const initial = (m.display_name?.[0] || '?').toUpperCase();
+      const roleLabel = m.role === 'owner' ? '소유자' : m.role === 'editor' ? '편집자' : '뷰어';
+      const canKick = iAmOwner && !isMe;
+      return `
+        <div class="account-card" style="padding:10px 12px">
+          <div class="account-avatar" style="width:32px;height:32px;font-size:14px">${initial}</div>
+          <div class="account-info">
+            <div class="account-name" style="font-size:13px">${m.display_name || '익명'}${isMe?' (나)':''}</div>
+            <div class="account-email" style="font-size:11px">${roleLabel}${m.joined_at ? ' · ' + new Date(m.joined_at).toLocaleDateString('ko-KR') : ''}</div>
+          </div>
+          ${canKick ? `<button class="secondary-btn" style="width:auto;padding:6px 10px;font-size:11px" onclick="kickMember('${m.user_id}')">제거</button>` : ''}
+        </div>
+      `;
+    }).join('');
+  } catch (e) {
+    cont.innerHTML = '<div style="font-size:12px;color:#ff8a8a">멤버 불러오기 실패: ' + (e.message||e) + '</div>';
+  }
+}
+
+async function doInvite() {
+  if (!TRIP?.cloud_id) { showToast('동기화 먼저 필요'); return; }
+  const email = document.getElementById('invite-email').value.trim();
+  if (!email.includes('@')) { showToast('올바른 이메일을 입력하세요'); return; }
+  try {
+    const result = await Cloud.members.invite(TRIP.cloud_id, email, _inviteRole);
+    if (result.status === 'invited') {
+      showToast(`✨ ${result.display_name} 초대됨`);
+      document.getElementById('invite-email').value = '';
+      await refreshMembersList();
+    } else if (result.status === 'user_not_found') {
+      showToast(`⚠️ ${email} 사용자를 찾을 수 없어요. 회원가입 안내 필요.`);
+    } else if (result.status === 'already_member') {
+      showToast(`이미 멤버: ${result.display_name}`);
+    } else if (result.status === 'self_invite') {
+      showToast('본인은 이미 소유자입니다');
+    } else {
+      showToast('초대 실패: ' + result.status);
+    }
+  } catch (e) {
+    showToast('초대 실패: ' + (e.message || e));
+  }
+}
+
+async function kickMember(userId) {
+  if (!TRIP?.cloud_id) return;
+  if (!confirm('이 멤버를 제거할까요?')) return;
+  try {
+    await Cloud.members.kick(TRIP.cloud_id, userId);
+    showToast('🗑️ 멤버 제거됨');
+    await refreshMembersList();
+  } catch (e) {
+    showToast('제거 실패: ' + (e.message || e));
+  }
 }
 
 /* ── Export / Import ──────────────────────────────── */
