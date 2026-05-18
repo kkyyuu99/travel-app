@@ -32,17 +32,46 @@
       const session = await auth.session();
       return session?.user || null;
     },
-    async signInWithMagicLink(email, redirectTo) {
-      const { error } = await client.auth.signInWithOtp({
+    // 회원가입: 이메일+비밀번호 → 'signup' 타입 인증 메일 전송 (6자리 코드 포함)
+    async signUp(email, password, displayName) {
+      const { error } = await client.auth.signUp({
         email,
+        password,
         options: {
-          emailRedirectTo: redirectTo || window.location.href,
+          data: displayName ? { display_name: displayName } : undefined,
+          emailRedirectTo: window.location.href,
         },
       });
       if (error) throw error;
     },
-    async verifyOtp(email, token) {
-      const { error } = await client.auth.verifyOtp({ email, token, type: 'email' });
+    // 회원가입 인증 코드 검증
+    async verifySignupOtp(email, token) {
+      const { error } = await client.auth.verifyOtp({ email, token, type: 'signup' });
+      if (error) throw error;
+    },
+    // 이메일+비밀번호 로그인
+    async signInWithPassword(email, password) {
+      const { error } = await client.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+    },
+    // 비밀번호 재설정 요청 (인증 메일에 6자리 코드 포함)
+    async sendPasswordResetCode(email) {
+      const { error } = await client.auth.resetPasswordForEmail(email);
+      if (error) throw error;
+    },
+    // 재설정 코드 검증 (성공 시 일시 세션 발급 → updatePassword 가능)
+    async verifyRecoveryOtp(email, token) {
+      const { error } = await client.auth.verifyOtp({ email, token, type: 'recovery' });
+      if (error) throw error;
+    },
+    // 현재 세션에서 비밀번호 변경
+    async updatePassword(newPassword) {
+      const { error } = await client.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+    },
+    // 미인증 사용자 재발송
+    async resendSignupCode(email) {
+      const { error } = await client.auth.resend({ type: 'signup', email });
       if (error) throw error;
     },
     async signOut() {

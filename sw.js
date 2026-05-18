@@ -1,20 +1,20 @@
 // Travel PWA — Service Worker
 // 캐시 버전을 올리면 모든 사용자가 새 번들을 받습니다.
-const CACHE_VERSION = 'v5';
+const CACHE_VERSION = 'v6';
 const STATIC_CACHE = `travel-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `travel-runtime-${CACHE_VERSION}`;
 
-// 앱 셸 — 설치 시 미리 받아두는 정적 자원
+// 앱 셸 — 설치 시 미리 받아두는 정적 자원 (?v= 쿼리는 SW가 무시하도록 cacheFirst에서 처리)
 const PRECACHE_URLS = [
   './',
   './index.html',
   './manifest.json',
-  './js/seed.js',
-  './js/db.js',
-  './js/ai.js',
-  './js/supabase-config.js',
-  './js/cloud.js',
-  './js/sync.js',
+  './js/seed.js?v=6',
+  './js/db.js?v=6',
+  './js/ai.js?v=6',
+  './js/supabase-config.js?v=6',
+  './js/cloud.js?v=6',
+  './js/sync.js?v=6',
   './icons/icon.svg',
   './icons/icon-maskable.svg',
   './icons/icon-192.png',

@@ -675,6 +675,20 @@
   .modal-title { font-size: 18px; font-weight: 700; }
   .modal-sub { font-size: 12px; color: var(--muted); line-height: 1.5; }
   .modal-close { position: absolute; right: 24px; top: 24px; }
+
+  .mode-tabs { display: flex; gap: 4px; background: var(--surface2); padding: 4px; border-radius: 10px; margin-bottom: 4px; }
+  .mode-tab {
+    flex: 1; padding: 8px; background: transparent; border: none; color: var(--muted);
+    font-size: 12px; font-weight: 600; cursor: pointer; border-radius: 7px;
+    font-family: inherit; transition: background 0.15s, color 0.15s;
+  }
+  .mode-tab.active { background: var(--surface); color: var(--text); }
+
+  .auth-link {
+    background: none; border: none; color: #4fc3f7; font-size: 12px; cursor: pointer;
+    padding: 4px; text-align: left; font-family: inherit;
+  }
+  .auth-link:active { opacity: 0.6; }
 </style>
 </head>
 <body>
@@ -890,33 +904,87 @@
 </div>
 <!-- /screen-detail -->
 
-<!-- ── 사인인 모달 ──────────────────────────────────── -->
+<!-- ── 사인인 모달 (이메일+비밀번호 + 인증코드 가입) ── -->
 <div class="modal-overlay" id="signin-modal" onclick="if(event.target===this)closeSignIn()">
   <div class="modal" style="position:relative">
     <button class="icon-btn modal-close" onclick="closeSignIn()" aria-label="닫기">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
     </button>
-    <div class="modal-title" id="signin-title">로그인</div>
-    <div class="modal-sub" id="signin-sub">이메일을 입력하면 6자리 코드가 발송됩니다. 비밀번호 없이 매번 새 코드로 로그인.</div>
+    <div class="modal-title" id="signin-title">계정</div>
 
-    <div class="wizard-step active" id="signin-step-email">
+    <div class="mode-tabs" id="auth-mode-tabs">
+      <button class="mode-tab active" data-mode="signin" onclick="switchAuthMode('signin')">로그인</button>
+      <button class="mode-tab" data-mode="signup" onclick="switchAuthMode('signup')">회원가입</button>
+    </div>
+
+    <!-- 로그인 (이메일+비밀번호) -->
+    <div class="wizard-step active" id="signin-step-signin">
       <div class="field">
         <span class="field-label">이메일</span>
-        <input type="email" class="field-input" id="signin-email" placeholder="you@example.com" autocomplete="email">
+        <input type="email" class="field-input" id="login-email" placeholder="you@example.com" autocomplete="email">
       </div>
-      <button class="primary-btn" id="signin-send-btn" onclick="sendMagicCode()">코드 발송</button>
-    </div>
-
-    <div class="wizard-step" id="signin-step-code">
       <div class="field">
-        <span class="field-label">받은 6자리 코드</span>
-        <input type="text" class="field-input" id="signin-code" placeholder="123456" inputmode="numeric" maxlength="6" autocomplete="one-time-code">
-        <span class="field-hint" id="signin-code-hint"></span>
+        <span class="field-label">비밀번호</span>
+        <input type="password" class="field-input" id="login-password" placeholder="6자 이상" autocomplete="current-password">
       </div>
-      <button class="primary-btn" onclick="verifyMagicCode()">로그인</button>
-      <button class="secondary-btn" onclick="signinBackToEmail()">다른 이메일로</button>
+      <button class="primary-btn" onclick="doSignIn()">로그인</button>
+      <button class="auth-link" onclick="switchAuthMode('reset')">비밀번호를 잊으셨나요?</button>
     </div>
 
+    <!-- 회원가입: 이메일+비밀번호 → 인증코드 -->
+    <div class="wizard-step" id="signin-step-signup">
+      <div class="field">
+        <span class="field-label">이메일</span>
+        <input type="email" class="field-input" id="signup-email" placeholder="you@example.com" autocomplete="email">
+      </div>
+      <div class="field">
+        <span class="field-label">비밀번호</span>
+        <input type="password" class="field-input" id="signup-password" placeholder="6자 이상, 안전한 비밀번호" autocomplete="new-password">
+      </div>
+      <div class="field">
+        <span class="field-label">이름 (선택)</span>
+        <input type="text" class="field-input" id="signup-name" placeholder="홍길동" autocomplete="name">
+      </div>
+      <button class="primary-btn" onclick="doSignUp()">가입 신청 & 인증코드 발송</button>
+    </div>
+
+    <!-- 회원가입 인증코드 입력 -->
+    <div class="wizard-step" id="signin-step-verify">
+      <div class="modal-sub" id="verify-hint">이메일로 받은 6자리 인증코드를 입력하세요.</div>
+      <div class="field">
+        <span class="field-label">인증 코드</span>
+        <input type="text" class="field-input" id="verify-code" placeholder="123456" inputmode="numeric" maxlength="6" autocomplete="one-time-code">
+      </div>
+      <button class="primary-btn" onclick="doVerifySignup()">인증 완료 & 로그인</button>
+      <button class="auth-link" onclick="resendSignupCode()">코드 다시 보내기</button>
+    </div>
+
+    <!-- 비밀번호 찾기: 이메일 → 코드 + 새 비밀번호 -->
+    <div class="wizard-step" id="signin-step-reset">
+      <div class="modal-sub">가입한 이메일을 입력하면 재설정 코드가 발송됩니다.</div>
+      <div class="field">
+        <span class="field-label">이메일</span>
+        <input type="email" class="field-input" id="reset-email" placeholder="you@example.com" autocomplete="email">
+      </div>
+      <button class="primary-btn" onclick="doSendReset()">재설정 코드 보내기</button>
+      <button class="auth-link" onclick="switchAuthMode('signin')">← 로그인으로 돌아가기</button>
+    </div>
+
+    <!-- 재설정 코드 + 새 비밀번호 -->
+    <div class="wizard-step" id="signin-step-reset-verify">
+      <div class="modal-sub">받은 6자리 코드와 새 비밀번호를 입력하세요.</div>
+      <div class="field">
+        <span class="field-label">재설정 코드</span>
+        <input type="text" class="field-input" id="reset-code" placeholder="123456" inputmode="numeric" maxlength="6" autocomplete="one-time-code">
+      </div>
+      <div class="field">
+        <span class="field-label">새 비밀번호</span>
+        <input type="password" class="field-input" id="reset-new-password" placeholder="6자 이상" autocomplete="new-password">
+      </div>
+      <button class="primary-btn" onclick="doVerifyReset()">비밀번호 변경 & 로그인</button>
+    </div>
+
+    <!-- 로딩 / 에러 -->
     <div class="wizard-step" id="signin-step-loading">
       <div class="wizard-loading">
         <div class="spinner"></div>
@@ -926,18 +994,18 @@
 
     <div class="wizard-step" id="signin-step-error">
       <div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);padding:12px;border-radius:10px;color:#ff8a8a;font-size:12px;line-height:1.5" id="signin-error"></div>
-      <button class="secondary-btn" onclick="signinBackToEmail()">다시 시도</button>
+      <button class="secondary-btn" onclick="switchAuthMode(_currentAuthMode)">다시 시도</button>
     </div>
   </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="js/supabase-config.js"></script>
-<script src="js/cloud.js"></script>
-<script src="js/seed.js"></script>
-<script src="js/db.js"></script>
-<script src="js/ai.js"></script>
-<script src="js/sync.js"></script>
+<script src="js/supabase-config.js?v=6"></script>
+<script src="js/cloud.js?v=6"></script>
+<script src="js/seed.js?v=6"></script>
+<script src="js/db.js?v=6"></script>
+<script src="js/ai.js?v=6"></script>
+<script src="js/sync.js?v=6"></script>
 <script>
 /* ── DATA (현재 열린 여행에서 동적으로 채워짐) ── */
 let TRIP = null;          // 현재 열린 여행 객체 (IndexedDB에서)
@@ -1180,6 +1248,12 @@ async function loadWeather() {
 function renderWeather() {
   if (!weatherData) return;
   const strip = document.getElementById('weather-strip');
+  // 출발일이 16일 이상 미래면 부정확함을 명시
+  let staleness = '';
+  if (TRIP?.startDate) {
+    const daysAway = Math.round((new Date(TRIP.startDate) - new Date()) / 86400000);
+    if (daysAway > 16) staleness = ` · ⚠️ 16일 이상 미래는 부정확`;
+  }
   strip.innerHTML = weatherData.map(d => `
     <div class="wx-card">
       <div class="wx-date">${d.dateKo}</div>
@@ -1188,7 +1262,7 @@ function renderWeather() {
       <div class="wx-temps"><span class="wx-high">${d.max}°</span><span class="wx-low">${d.min}°</span></div>
       ${d.precip > 20 ? `<div class="wx-rain">💧${d.precip}%</div>` : ''}
     </div>
-  `).join('');
+  `).join('') + `<div style="font-size:9px;color:rgba(255,255,255,0.3);align-self:center;flex-shrink:0;padding:0 8px;white-space:nowrap"><a href="https://open-meteo.com" target="_blank" style="color:inherit;text-decoration:none">Open-Meteo (ECMWF/DWD)</a>${staleness}</div>`;
 }
 
 /* ── EXCHANGE RATE ── */
@@ -1731,7 +1805,7 @@ async function renderCurrencySheet() {
   const sym = currencySymbol(TRIP?TRIP.currency:'JPY');
   const hsym = currencySymbol(TRIP?TRIP.homeCurrency:'KRW');
   document.getElementById('rate-val').textContent = `${sym}1 = ${hsym}${rate.toFixed(2)}`;
-  document.getElementById('rate-upd').textContent = `업데이트: ${new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})}`;
+  document.getElementById('rate-upd').innerHTML = `업데이트: ${new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})} · <a href="https://frankfurter.dev" target="_blank" style="color:rgba(255,255,255,0.45);text-decoration:none">출처: ECB (Frankfurter)</a>`;
 
   // 통화별 적절한 빠른변환 단위 (1000엔/5000엔 단위는 JPY 기준이라 일반화)
   const isHighDenom = ['JPY','KRW','VND','IDR'].includes(TRIP?TRIP.currency:'JPY');
@@ -1953,17 +2027,19 @@ function renderAccountCard() {
   }
 }
 
+let _currentAuthMode = 'signin'; // signin | signup | reset
+
 function openSignIn() {
   if (!window.Cloud || !window.Cloud.enabled) {
     showToast('백엔드 연결 안 됨 — 오프라인에서만 사용 가능');
     return;
   }
   _pendingEmail = null;
-  document.getElementById('signin-email').value = '';
-  document.getElementById('signin-code').value = '';
-  showSigninStep('email');
+  ['login-email','login-password','signup-email','signup-password','signup-name','verify-code','reset-email','reset-code','reset-new-password']
+    .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  switchAuthMode('signin');
   document.getElementById('signin-modal').classList.add('open');
-  setTimeout(() => document.getElementById('signin-email').focus(), 50);
+  setTimeout(() => document.getElementById('login-email').focus(), 50);
 }
 
 function closeSignIn() {
@@ -1975,40 +2051,135 @@ function showSigninStep(step) {
   document.getElementById('signin-step-' + step)?.classList.add('active');
 }
 
-function signinBackToEmail() {
-  showSigninStep('email');
+function switchAuthMode(mode) {
+  _currentAuthMode = mode;
+  document.querySelectorAll('#auth-mode-tabs .mode-tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.mode === (mode === 'reset' ? 'signin' : mode));
+  });
+  // reset 모드는 탭에 없어서 signin 탭 활성으로 유지
+  showSigninStep(mode);
+  // 초기 포커스
+  setTimeout(() => {
+    const first = document.querySelector(`#signin-step-${mode} input`);
+    first?.focus();
+  }, 50);
 }
 
-async function sendMagicCode() {
-  const email = document.getElementById('signin-email').value.trim();
-  if (!email || !email.includes('@')) { showToast('올바른 이메일을 입력하세요'); return; }
+async function doSignIn() {
+  const email = document.getElementById('login-email').value.trim();
+  const pw = document.getElementById('login-password').value;
+  if (!email.includes('@') || !pw) { showToast('이메일·비밀번호를 모두 입력하세요'); return; }
   showSigninStep('loading');
-  document.getElementById('signin-loading-text').textContent = `${email} 로 코드 발송 중...`;
+  document.getElementById('signin-loading-text').textContent = '로그인 중...';
   try {
-    await Cloud.auth.signInWithMagicLink(email, window.location.href);
+    await Cloud.auth.signInWithPassword(email, pw);
+    closeSignIn();
+    await refreshAuthUI();
+    showToast(`✨ ${email} 로그인됨 — 동기화 중...`);
+    await syncOnSignIn();
+  } catch (err) {
+    const msg = (err.message || '').toLowerCase();
+    let display = '로그인 실패: ' + (err.message || err);
+    if (msg.includes('email not confirmed') || msg.includes('not verified')) {
+      _pendingEmail = email;
+      try { await Cloud.auth.resendSignupCode(email); } catch {}
+      document.getElementById('verify-hint').textContent = `${email}이 아직 인증되지 않았어요. 메일함의 인증 코드를 입력하세요.`;
+      showSigninStep('verify');
+      setTimeout(() => document.getElementById('verify-code').focus(), 50);
+      return;
+    }
+    if (msg.includes('invalid login') || msg.includes('invalid_credentials')) {
+      display = '이메일 또는 비밀번호가 올바르지 않습니다.';
+    }
+    document.getElementById('signin-error').textContent = display;
+    showSigninStep('error');
+  }
+}
+
+async function doSignUp() {
+  const email = document.getElementById('signup-email').value.trim();
+  const pw = document.getElementById('signup-password').value;
+  const name = document.getElementById('signup-name').value.trim();
+  if (!email.includes('@')) { showToast('올바른 이메일을 입력하세요'); return; }
+  if (pw.length < 6) { showToast('비밀번호는 6자 이상이어야 합니다'); return; }
+  showSigninStep('loading');
+  document.getElementById('signin-loading-text').textContent = `${email}로 인증 코드 발송 중...`;
+  try {
+    await Cloud.auth.signUp(email, pw, name || null);
     _pendingEmail = email;
-    document.getElementById('signin-code-hint').textContent = `${email} 로 6자리 코드 발송됨. 메일 확인 후 입력하세요.`;
-    showSigninStep('code');
-    setTimeout(() => document.getElementById('signin-code').focus(), 50);
+    document.getElementById('verify-hint').innerHTML = `${email} 로 인증 코드 발송됨.<br>메일함 확인 후 6자리 코드 입력 (스팸함도 확인).`;
+    showSigninStep('verify');
+    setTimeout(() => document.getElementById('verify-code').focus(), 50);
+  } catch (err) {
+    const msg = (err.message || '').toLowerCase();
+    let display = '가입 실패: ' + (err.message || err);
+    if (msg.includes('already registered') || msg.includes('already exists')) {
+      display = '이미 가입된 이메일입니다. 로그인하세요.';
+    }
+    document.getElementById('signin-error').textContent = display;
+    showSigninStep('error');
+  }
+}
+
+async function doVerifySignup() {
+  const code = document.getElementById('verify-code').value.trim();
+  if (!code || !_pendingEmail) { showToast('코드를 입력하세요'); return; }
+  showSigninStep('loading');
+  document.getElementById('signin-loading-text').textContent = '인증 확인 중...';
+  try {
+    await Cloud.auth.verifySignupOtp(_pendingEmail, code);
+    closeSignIn();
+    await refreshAuthUI();
+    showToast(`✨ ${_pendingEmail} 가입 완료 — 동기화 중...`);
+    await syncOnSignIn();
+  } catch (err) {
+    document.getElementById('signin-error').textContent = '인증 실패: ' + (err.message || err) + '\n코드를 확인하고 다시 시도하세요.';
+    showSigninStep('error');
+  }
+}
+
+async function resendSignupCode() {
+  if (!_pendingEmail) { showToast('이메일이 비어있습니다'); return; }
+  try {
+    await Cloud.auth.resendSignupCode(_pendingEmail);
+    showToast(`📩 코드 재발송됨 (${_pendingEmail})`);
+  } catch (err) {
+    showToast('재발송 실패: ' + (err.message || err));
+  }
+}
+
+async function doSendReset() {
+  const email = document.getElementById('reset-email').value.trim();
+  if (!email.includes('@')) { showToast('올바른 이메일을 입력하세요'); return; }
+  showSigninStep('loading');
+  document.getElementById('signin-loading-text').textContent = `${email}로 재설정 코드 발송 중...`;
+  try {
+    await Cloud.auth.sendPasswordResetCode(email);
+    _pendingEmail = email;
+    showSigninStep('reset-verify');
+    setTimeout(() => document.getElementById('reset-code').focus(), 50);
   } catch (err) {
     document.getElementById('signin-error').textContent = '발송 실패: ' + (err.message || err);
     showSigninStep('error');
   }
 }
 
-async function verifyMagicCode() {
-  const code = document.getElementById('signin-code').value.trim();
+async function doVerifyReset() {
+  const code = document.getElementById('reset-code').value.trim();
+  const newPw = document.getElementById('reset-new-password').value;
   if (!code || !_pendingEmail) { showToast('코드를 입력하세요'); return; }
+  if (newPw.length < 6) { showToast('새 비밀번호는 6자 이상이어야 합니다'); return; }
   showSigninStep('loading');
   document.getElementById('signin-loading-text').textContent = '확인 중...';
   try {
-    await Cloud.auth.verifyOtp(_pendingEmail, code);
+    await Cloud.auth.verifyRecoveryOtp(_pendingEmail, code);
+    await Cloud.auth.updatePassword(newPw);
     closeSignIn();
     await refreshAuthUI();
-    showToast(`✨ ${_pendingEmail} 로그인됨 — 동기화 중...`);
+    showToast(`✨ 비밀번호 변경 완료 — ${_pendingEmail} 로그인됨`);
     await syncOnSignIn();
   } catch (err) {
-    document.getElementById('signin-error').textContent = '로그인 실패: ' + (err.message || err) + '\n코드를 다시 확인하세요.';
+    document.getElementById('signin-error').textContent = '실패: ' + (err.message || err);
     showSigninStep('error');
   }
 }
