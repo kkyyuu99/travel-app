@@ -1,0 +1,22 @@
+# 로컬 개발 설정
+.claude/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 에디터
+.vscode/
+.idea/
+
+# Python (아이콘 생성기)
+__pycache__/
+*.pyc
+
+# 노트
+*.log
+.env
+.env.local
+
+# OS 임시
+*~
+*.swp

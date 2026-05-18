@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1a2332"/>
+      <stop offset="100%" stop-color="#0d1117"/>
+    </linearGradient>
+    <linearGradient id="tower" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ff6b6b"/>
+      <stop offset="100%" stop-color="#e63946"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="96" fill="url(#bg)"/>
+  <g fill="url(#tower)" stroke="#ff8a8a" stroke-width="2">
+    <polygon points="256,72 244,128 268,128"/>
+    <rect x="248" y="128" width="16" height="20"/>
+    <polygon points="248,148 264,148 280,200 232,200"/>
+    <rect x="222" y="200" width="68" height="14"/>
+    <polygon points="222,214 290,214 320,320 192,320"/>
+    <rect x="184" y="320" width="144" height="16"/>
+    <polygon points="184,336 328,336 360,440 152,440"/>
+  </g>
+  <g stroke="#0d1117" stroke-width="3" fill="none">
+    <line x1="222" y1="240" x2="290" y2="240"/>
+    <line x1="210" y1="270" x2="302" y2="270"/>
+    <line x1="200" y1="300" x2="312" y2="300"/>
+    <line x1="184" y1="360" x2="328" y2="360"/>
+    <line x1="172" y1="390" x2="340" y2="390"/>
+    <line x1="160" y1="420" x2="352" y2="420"/>
+  </g>
+  <rect x="232" y="440" width="48" height="12" fill="#0d1117"/>
+</svg>
