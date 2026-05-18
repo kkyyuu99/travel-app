@@ -937,6 +937,7 @@
 <script src="js/seed.js"></script>
 <script src="js/db.js"></script>
 <script src="js/ai.js"></script>
+<script src="js/sync.js"></script>
 <script>
 /* ── DATA (현재 열린 여행에서 동적으로 채워짐) ── */
 let TRIP = null;          // 현재 열린 여행 객체 (IndexedDB에서)
@@ -1102,10 +1103,10 @@ async function loadState() {
     } catch {}
   }
 }
-function saveChecked() { TripDB.state.patch(TRIP.id, { checked: checkedItems }); }
-function saveMemos()   { TripDB.state.patch(TRIP.id, { memos }); }
-function saveExpenses(){ TripDB.state.patch(TRIP.id, { expenses }); }
-function savePacking() { TripDB.state.patch(TRIP.id, { packing }); }
+function saveChecked() { TripDB.state.patch(TRIP.id, { checked: checkedItems }); _bgPushUserState(TRIP); }
+function saveMemos()   { TripDB.state.patch(TRIP.id, { memos }); _bgPushUserState(TRIP); }
+function saveExpenses(){ TripDB.state.patch(TRIP.id, { expenses }); /* Day 4: 클라우드 expenses 테이블로 이전 */ }
+function savePacking() { TripDB.state.patch(TRIP.id, { packing }); /* Day 4: 클라우드 packing_items 테이블로 이전 */ }
 
 const PACK_CATS = ['서류·돈', '전자기기', '의류', '위생·약품', '기타'];
 const PACK_TEMPLATE = [
@@ -1853,6 +1854,24 @@ async function openTrip(id) {
   const trip = await TripDB.trips.get(id);
   if (!trip) { showToast('여행을 찾을 수 없어요'); return; }
 
+  // 로그인 상태 + cloud_id 있으면 사용자 상태 1회 풀-머지 (다른 기기에서 체크한 것 반영)
+  if (_currentUser && trip.cloud_id && window.Sync?.enabled) {
+    try {
+      const remote = await Sync.pullUserState(trip.cloud_id);
+      if (remote) {
+        const local = await TripDB.state.get(trip.id);
+        const merged = {
+          tripId: trip.id,
+          checked: { ...(local.checked || {}), ...(remote.checked_items || {}) },
+          memos: { ...(local.memos || {}), ...(remote.memos || {}) },
+          expenses: local.expenses || {},
+          packing: local.packing || null,
+        };
+        await TripDB.state.put(merged);
+      }
+    } catch (e) { console.warn('user state 풀 실패:', e.message); }
+  }
+
   TRIP = trip;
   DAYS = trip.days || [];
   BUDGET = (trip.budget && trip.budget.items) || [];
@@ -1986,12 +2005,38 @@ async function verifyMagicCode() {
     await Cloud.auth.verifyOtp(_pendingEmail, code);
     closeSignIn();
     await refreshAuthUI();
-    showToast(`✨ ${_pendingEmail} 로그인됨`);
-    // TODO Day 2.2: 로그인 후 클라우드 트립 가져오기 호출
+    showToast(`✨ ${_pendingEmail} 로그인됨 — 동기화 중...`);
+    await syncOnSignIn();
   } catch (err) {
     document.getElementById('signin-error').textContent = '로그인 실패: ' + (err.message || err) + '\n코드를 다시 확인하세요.';
     showSigninStep('error');
   }
+}
+
+async function syncOnSignIn() {
+  if (!window.Sync || !window.Sync.enabled) return;
+  try {
+    const result = await Sync.syncOnSignIn();
+    showToast(`☁️ 동기화 완료 — ${result.pulled || 0}개 받음, ${result.pushed || 0}개 보냄`);
+    await renderTripList();
+  } catch (e) {
+    console.warn('동기화 실패:', e);
+    showToast('⚠️ 동기화 실패 — 로컬은 계속 사용 가능');
+  }
+}
+
+// 무시 가능 푸시: 로그인 상태일 때만, 실패해도 사용자 흐름 안 막음
+function _bgPushTrip(localTrip) {
+  if (!_currentUser || !window.Sync?.enabled) return;
+  Sync.pushTrip(localTrip).catch(e => console.warn('백그라운드 푸시 실패:', e.message));
+}
+function _bgDeleteCloudTrip(cloudId) {
+  if (!_currentUser || !window.Sync?.enabled || !cloudId) return;
+  Sync.deleteTrip(cloudId).catch(e => console.warn('클라우드 삭제 실패:', e.message));
+}
+function _bgPushUserState(trip) {
+  if (!_currentUser || !window.Sync?.enabled || !trip?.cloud_id) return;
+  Sync.pushUserState(trip.cloud_id, { checked: checkedItems, memos }).catch(e => console.warn(e.message));
 }
 
 async function signOutNow() {
@@ -2117,6 +2162,7 @@ async function saveGeneratedTrip() {
   const t = AI.sanitize(_generatedTrip);
   await TripDB.trips.put(t);
   showToast('✨ 여행 저장됨');
+  _bgPushTrip(t);
   _generatedTrip = null;
   await renderTripList();
   showScreen('list');
@@ -2138,8 +2184,10 @@ async function deleteCurrentTrip() {
   if (!TRIP) return;
   document.getElementById('trip-menu').classList.remove('open');
   if (!confirm(`"${TRIP.name}" 여행을 삭제할까요? 체크·메모·지출 기록도 함께 사라집니다.`)) return;
+  const cloudId = TRIP.cloud_id;
   await TripDB.trips.remove(TRIP.id);
   showToast('🗑️ 삭제됨');
+  _bgDeleteCloudTrip(cloudId);
   backToList();
 }
 
@@ -2152,6 +2200,7 @@ async function renameTrip() {
   await TripDB.trips.put(TRIP);
   document.getElementById('trip-title').textContent = `${TRIP.emoji || ''} ${TRIP.name}`.trim();
   showToast('✏️ 이름 변경됨');
+  _bgPushTrip(TRIP);
 }
 
 /* ── Export / Import ──────────────────────────────── */
@@ -2234,12 +2283,15 @@ async function onImportFile(event) {
     // Cloud 백엔드가 있으면 인증 상태 표시
     if (window.Cloud && window.Cloud.enabled) {
       await refreshAuthUI();
+      // 기존 세션 복원된 상태로 들어왔으면 자동 1회 동기화
+      if (_currentUser) {
+        syncOnSignIn();  // 비동기, 결과는 토스트로
+      }
       Cloud.auth.onChange(async (event) => {
         await refreshAuthUI();
         if (event === 'SIGNED_IN') {
-          // TODO Day 2.2: 클라우드 트립 가져오기·로컬과 머지
+          // verifyMagicCode에서 이미 호출하므로 여기서는 noop (중복 방지)
         } else if (event === 'SIGNED_OUT') {
-          // 로컬 데이터만 표시 (그대로 두기)
           await renderTripList();
         }
       });
