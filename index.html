@@ -683,6 +683,53 @@
   }
   .my-maps-wrap iframe { width: 100%; height: 100%; border: 0; border-radius: 12px; }
 
+  /* ── Memo 사진 렌더 ────────────────────────────── */
+  .memo-rendered {
+    margin-top: 4px; padding: 10px 12px; background: var(--surface2);
+    border: 1px solid var(--border); border-radius: 10px; font-size: 12px; line-height: 1.6;
+  }
+  .memo-rendered p { margin: 0 0 6px; word-break: break-word; }
+  .memo-rendered img {
+    max-width: 100%; height: auto; border-radius: 8px; margin: 6px 0;
+    cursor: zoom-in; display: block;
+  }
+
+  /* 사진 뷰어 (전체화면) */
+  .photo-viewer { position: fixed; inset: 0; background: rgba(0,0,0,0.92); z-index: 200; display: none; align-items: center; justify-content: center; padding: 16px; }
+  .photo-viewer.open { display: flex; }
+  .photo-viewer img { max-width: 100%; max-height: 100%; object-fit: contain; }
+  .photo-viewer-close { position: absolute; top: 16px; right: 16px; width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,0.15); border: none; color: white; font-size: 20px; cursor: pointer; }
+
+  /* ── Edit modal (lodging/reservation 수정용) ──── */
+  .edit-form-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 150;
+    display: none; align-items: center; justify-content: center; padding: 16px;
+    backdrop-filter: blur(8px);
+  }
+  .edit-form-overlay.open { display: flex; }
+  .edit-form {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 18px;
+    padding: 20px; max-width: 440px; width: 100%; max-height: 85vh; overflow-y: auto;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+
+  /* ── Desktop sidebar 위젯 ──────────────────────── */
+  .summary-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: 14px; margin-bottom: 12px;
+  }
+  .summary-card-title { font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+  .summary-card-row { display: flex; justify-content: space-between; align-items: center; font-size: 12px; padding: 4px 0; }
+  .summary-card-big { font-size: 22px; font-weight: 800; }
+  .countdown-pill { display: inline-block; padding: 4px 10px; border-radius: 99px; background: var(--surface2); font-size: 11px; font-weight: 700; }
+  .countdown-pill.urgent { background: rgba(255,138,138,0.15); color: #ff8a8a; }
+
+  /* 데스크탑일 때만 사이드 요약 보이게 */
+  #desktop-sidebar { display: none; }
+  @media (min-width: 900px) {
+    #desktop-sidebar { display: block; padding: 8px 0; }
+  }
+
   /* ── Day tabs: 60일 스케일링 ─────────────────────── */
   #day-tabs { display: flex; gap: 4px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: thin; padding-bottom: 4px; }
   #day-tabs::-webkit-scrollbar { height: 4px; }
@@ -714,8 +761,17 @@
       padding: 16px 8px 80px;
     }
     /* 사이드 패널: 빠른 액션 + 가계부 요약 등 (Phase 7+) */
+    #screen-detail #desktop-sidebar {
+      grid-column: 1;
+      grid-row: 4;
+      align-self: start;
+      position: sticky;
+      top: 80px;
+      padding: 0;
+    }
     #screen-detail #bottom-nav {
       grid-column: 1;
+      grid-row: 5;
       position: sticky;
       bottom: 16px;
       border-radius: 14px;
@@ -729,6 +785,8 @@
       background: var(--surface);
       backdrop-filter: none;
     }
+    #screen-detail #mymaps-container { grid-column: 1 / -1; grid-row: 3; }
+    #screen-detail #scroll-area { grid-row: 4 / 6; }
     #screen-detail .nav-btn { flex-direction: row; justify-content: flex-start; padding: 10px 14px; font-size: 13px; gap: 10px; border-radius: 10px; }
     #screen-detail .nav-btn.active { background: var(--surface2); }
 
@@ -1062,6 +1120,23 @@
   </div>
 </div>
 
+<!-- ── 예약·숙소 편집 모달 ────────────────────────── -->
+<div class="edit-form-overlay" id="edit-form-overlay" onclick="if(event.target===this)closeEditForm()">
+  <div class="edit-form">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div class="modal-title" id="edit-form-title">수정</div>
+      <button class="icon-btn" onclick="closeEditForm()" aria-label="닫기">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div id="edit-form-fields"></div>
+    <div style="display:flex; gap:8px">
+      <button class="secondary-btn" onclick="closeEditForm()">취소</button>
+      <button class="primary-btn" onclick="saveEditForm()">저장</button>
+    </div>
+  </div>
+</div>
+
 <!-- ── 내지도 설정 모달 ───────────────────────────── -->
 <div class="modal-overlay" id="mymaps-modal" onclick="if(event.target===this)closeMyMapsModal()">
   <div class="modal" style="position:relative; max-width:480px">
@@ -1120,6 +1195,8 @@
 <div id="progress-bar"><div id="progress-fill"></div></div>
 
 <div id="scroll-area"></div>
+
+<div id="desktop-sidebar"></div>
 
 <nav id="bottom-nav">
   <button class="nav-btn active" id="nav-timeline" onclick="switchView('timeline')">
@@ -1262,13 +1339,13 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-<script src="js/supabase-config.js?v=10"></script>
-<script src="js/cloud.js?v=10"></script>
-<script src="js/seed.js?v=10"></script>
-<script src="js/db.js?v=10"></script>
-<script src="js/ai.js?v=10"></script>
-<script src="js/sync.js?v=10"></script>
-<script src="js/notion-zip.js?v=10"></script>
+<script src="js/supabase-config.js?v=11"></script>
+<script src="js/cloud.js?v=11"></script>
+<script src="js/seed.js?v=11"></script>
+<script src="js/db.js?v=11"></script>
+<script src="js/ai.js?v=11"></script>
+<script src="js/sync.js?v=11"></script>
+<script src="js/notion-zip.js?v=11"></script>
 <script>
 /* ── DATA (현재 열린 여행에서 동적으로 채워짐) ── */
 let TRIP = null;          // 현재 열린 여행 객체 (IndexedDB에서)
@@ -1729,8 +1806,9 @@ function renderTimeline() {
             ` : ''}
             <div class="memo-area">
               <button class="memo-btn ${memo?'has-memo':''}" id="memobtn-${item.id}" onclick="openMemo('${item.id}')">
-                ✏️ ${memo || '메모 추가...'}
+                ✏️ ${memo ? '메모·사진 편집' : '메모 추가...'}
               </button>
+              ${memo ? `<div class="memo-rendered">${renderMemoContent(memo)}</div>` : ''}
               <div class="memo-editor" id="memoeditor-${item.id}">
                 <textarea class="memo-textarea" id="memotext-${item.id}" placeholder="나만의 메모를 입력하세요...">${memo}</textarea>
                 <div class="memo-actions">
@@ -1823,7 +1901,10 @@ function toggleCheck(id) {
   renderTabs();
   renderProgress();
   if (checkedItems[id]) showToast('✅ 완료!');
+  renderDesktopSidebar();
 }
+
+window.addEventListener('resize', () => { if (TRIP) renderDesktopSidebar(); });
 
 /* ── MEMO ── */
 function openMemo(id) {
@@ -1860,6 +1941,55 @@ function deleteMemo(id) {
   btn.style.display = 'flex';
   document.getElementById('memoeditor-' + id).classList.remove('open');
   renderTimeline();
+}
+
+/* ── 메모 내용 렌더링 (마크다운 이미지 → <img>) ─── */
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+}
+
+function renderMemoContent(text) {
+  if (!text) return '';
+  // 줄 단위로 처리
+  const lines = String(text).split('\n');
+  const html = lines.map(line => {
+    // ![alt](url) — 이미지
+    const imgMatch = line.match(/^!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)$/);
+    if (imgMatch) {
+      const url = imgMatch[2];
+      return `<img src="${escapeHtml(url)}" alt="${escapeHtml(imgMatch[1])}" loading="lazy" onclick="openPhotoViewer('${url}')">`;
+    }
+    // 라인 안에 ![...](...)이 섞여 있으면 변환
+    const mixed = line.replace(/!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g, (m, alt, url) =>
+      `<img src="${escapeHtml(url)}" alt="${escapeHtml(alt)}" loading="lazy" onclick="openPhotoViewer('${url}')">`
+    );
+    // 텍스트 라인은 escape 후 <br>
+    if (mixed === line) {
+      return line.trim() ? `<p>${escapeHtml(line)}</p>` : '';
+    }
+    return mixed; // 이미 변환됨 (img 포함)
+  }).join('');
+  return html;
+}
+
+function openPhotoViewer(url) {
+  let viewer = document.getElementById('photo-viewer');
+  if (!viewer) {
+    viewer = document.createElement('div');
+    viewer.id = 'photo-viewer';
+    viewer.className = 'photo-viewer';
+    viewer.innerHTML = `
+      <button class="photo-viewer-close" onclick="closePhotoViewer()">✕</button>
+      <img id="photo-viewer-img" alt="">
+    `;
+    viewer.addEventListener('click', (e) => { if (e.target === viewer) closePhotoViewer(); });
+    document.body.appendChild(viewer);
+  }
+  viewer.querySelector('#photo-viewer-img').src = url;
+  viewer.classList.add('open');
+}
+function closePhotoViewer() {
+  document.getElementById('photo-viewer')?.classList.remove('open');
 }
 
 /* ── 사진 첨부 (Storage) ──────────────────────────── */
@@ -2212,7 +2342,36 @@ async function renderReservationsSheet() {
     return;
   }
 
+  // 통합 타임라인 (예약 + 숙소를 날짜순)
+  const events = [];
+  reservations.forEach(r => {
+    if (r.start_date) events.push({ date: r.start_date, kind: 'resv', type: r.type, title: r.title, data: r });
+  });
+  lodgings.forEach(l => {
+    if (l.check_in) events.push({ date: l.check_in, kind: 'lodge-in', title: '체크인 · ' + l.name, data: l });
+    if (l.check_out) events.push({ date: l.check_out, kind: 'lodge-out', title: '체크아웃 · ' + l.name, data: l });
+  });
+  events.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const upcoming = events.filter(e => e.date >= todayStr).slice(0, 5);
+
   document.getElementById('sheet-body').innerHTML = `
+    ${upcoming.length > 0 ? `
+      <div class="summary-card" style="margin-bottom:14px">
+        <div class="summary-card-title">다가오는 일정 (${upcoming.length})</div>
+        ${upcoming.map(e => {
+          const days = Math.round((new Date(e.date) - new Date(todayStr)) / 86400000);
+          const dDay = days === 0 ? 'D-Day' : `D-${days}`;
+          const emoji = e.kind === 'lodge-in' ? '🛏️' : e.kind === 'lodge-out' ? '🧳' :
+                       (e.type === '항공' ? '✈️' : e.type === '기차' ? '🚄' : e.type === '렌터카' ? '🚗' : e.type === '투어' ? '🎫' : '📌');
+          return `<div class="summary-card-row">
+            <span>${emoji} ${escapeHtml(e.title || '')}</span>
+            <span class="countdown-pill ${days <= 1 ? 'urgent' : ''}">${dDay}</span>
+          </div>`;
+        }).join('')}
+      </div>
+    ` : ''}
+
     <!-- 예약 추가 폼 -->
     <div class="expense-add-form">
       <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:4px">새 예약 추가</div>
@@ -2232,14 +2391,14 @@ async function renderReservationsSheet() {
 
     <div class="expense-list">
       ${reservations.length === 0 ? '<div style="font-size:12px;color:var(--muted);padding:8px 12px">예약이 없어요.</div>' : reservations.map(r => `
-        <div class="expense-row">
+        <div class="expense-row" style="cursor:pointer" onclick="editReservation('${r.id}')">
           <span class="cat">${r.type || '기타'}</span>
           <div style="flex:1;min-width:0">
-            <div style="font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.title}</div>
-            <div style="font-size:10px;color:var(--muted)">${r.start_date || ''}${r.confirmation_code ? ' · ' + r.confirmation_code : ''}</div>
+            <div style="font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(r.title)}</div>
+            <div style="font-size:10px;color:var(--muted)">${r.start_date || ''}${r.confirmation_code ? ' · ' + escapeHtml(r.confirmation_code) : ''}</div>
           </div>
-          ${r.url ? `<a href="${r.url}" target="_blank" style="font-size:11px;color:#4fc3f7;text-decoration:none">열기</a>` : ''}
-          <span class="del" onclick="deleteReservation('${r.id}')">×</span>
+          ${r.url ? `<a href="${escapeHtml(r.url)}" target="_blank" onclick="event.stopPropagation()" style="font-size:11px;color:#4fc3f7;text-decoration:none">열기</a>` : ''}
+          <span class="del" onclick="event.stopPropagation();deleteReservation('${r.id}')">×</span>
         </div>
       `).join('')}
     </div>
@@ -2260,13 +2419,13 @@ async function renderReservationsSheet() {
       </div>
       <div class="expense-list">
         ${lodgings.length === 0 ? '<div style="font-size:12px;color:var(--muted);padding:8px 12px">숙소 정보가 없어요.</div>' : lodgings.map(l => `
-          <div class="expense-row">
+          <div class="expense-row" style="cursor:pointer" onclick="editLodging('${l.id}')">
             <span class="cat">🏨</span>
             <div style="flex:1;min-width:0">
-              <div style="font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l.name}</div>
-              <div style="font-size:10px;color:var(--muted)">${l.check_in || ''} ~ ${l.check_out || ''}${l.city ? ' · ' + l.city : ''}</div>
+              <div style="font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(l.name)}</div>
+              <div style="font-size:10px;color:var(--muted)">${l.check_in || ''} ~ ${l.check_out || ''}${l.city ? ' · ' + escapeHtml(l.city) : ''}</div>
             </div>
-            <span class="del" onclick="deleteLodging('${l.id}')">×</span>
+            <span class="del" onclick="event.stopPropagation();deleteLodging('${l.id}')">×</span>
           </div>
         `).join('')}
       </div>
@@ -2296,6 +2455,124 @@ async function deleteReservation(id) {
   if (!confirm('이 예약을 삭제할까요?')) return;
   try { await Cloud.reservations.remove(id); renderReservationsSheet(); }
   catch (e) { showToast('실패: ' + e.message); }
+}
+
+/* ── 편집 모달 (예약·숙소 공용) ────────────────── */
+let _editTarget = null; // { kind: 'reservation'|'lodging', id, data }
+
+async function editReservation(id) {
+  try {
+    const list = await Cloud.reservations.listByTrip(TRIP.cloud_id);
+    const data = list.find(r => r.id === id);
+    if (!data) return;
+    _editTarget = { kind: 'reservation', id, data };
+    document.getElementById('edit-form-title').textContent = '예약 수정';
+    document.getElementById('edit-form-fields').innerHTML = `
+      <div class="field">
+        <span class="field-label">유형</span>
+        <select class="field-select" id="ef-type">
+          ${RESV_TYPES.map(t => `<option ${t===data.type?'selected':''}>${t}</option>`).join('')}
+        </select>
+      </div>
+      <div class="field"><span class="field-label">제목</span>
+        <input class="field-input" id="ef-title" value="${escapeHtml(data.title || '')}"></div>
+      <div class="field"><span class="field-label">시작일</span>
+        <input class="field-input" id="ef-start" type="date" value="${data.start_date || ''}"></div>
+      <div class="field"><span class="field-label">종료일 (선택)</span>
+        <input class="field-input" id="ef-end" type="date" value="${data.end_date || ''}"></div>
+      <div class="field"><span class="field-label">확인번호</span>
+        <input class="field-input" id="ef-code" value="${escapeHtml(data.confirmation_code || '')}"></div>
+      <div class="field"><span class="field-label">URL</span>
+        <input class="field-input" id="ef-url" type="url" value="${escapeHtml(data.url || '')}"></div>
+      <div class="field"><span class="field-label">금액 (선택)</span>
+        <input class="field-input" id="ef-amount" type="number" value="${data.amount || ''}"></div>
+      <div class="field"><span class="field-label">메모</span>
+        <textarea class="field-textarea" id="ef-notes" style="min-height:60px">${escapeHtml(data.notes || '')}</textarea></div>
+    `;
+    document.getElementById('edit-form-overlay').classList.add('open');
+  } catch (e) { showToast('로드 실패: ' + e.message); }
+}
+
+async function editLodging(id) {
+  try {
+    const list = await Cloud.lodgings.listByTrip(TRIP.cloud_id);
+    const data = list.find(l => l.id === id);
+    if (!data) return;
+    _editTarget = { kind: 'lodging', id, data };
+    document.getElementById('edit-form-title').textContent = '숙소 수정';
+    document.getElementById('edit-form-fields').innerHTML = `
+      <div class="field"><span class="field-label">이름</span>
+        <input class="field-input" id="ef-name" value="${escapeHtml(data.name || '')}"></div>
+      <div class="field"><span class="field-label">유형</span>
+        <select class="field-select" id="ef-lodge-type">
+          ${['호텔','에어비앤비','호스텔','파라도르','캠핑','민박','기타'].map(t => `<option ${t===data.type?'selected':''}>${t}</option>`).join('')}
+        </select>
+      </div>
+      <div class="field"><span class="field-label">도시</span>
+        <input class="field-input" id="ef-city" value="${escapeHtml(data.city || '')}"></div>
+      <div class="field"><span class="field-label">주소</span>
+        <input class="field-input" id="ef-address" value="${escapeHtml(data.address || '')}"></div>
+      <div class="field"><span class="field-label">체크인</span>
+        <input class="field-input" id="ef-checkin" type="date" value="${data.check_in || ''}"></div>
+      <div class="field"><span class="field-label">체크아웃</span>
+        <input class="field-input" id="ef-checkout" type="date" value="${data.check_out || ''}"></div>
+      <div class="field"><span class="field-label">확인번호</span>
+        <input class="field-input" id="ef-code" value="${escapeHtml(data.reservation_code || '')}"></div>
+      <div class="field"><span class="field-label">예약 URL</span>
+        <input class="field-input" id="ef-url" type="url" value="${escapeHtml(data.reservation_url || '')}"></div>
+      <div class="field"><span class="field-label">금액 (선택)</span>
+        <input class="field-input" id="ef-amount" type="number" value="${data.amount || ''}"></div>
+      <div class="field"><span class="field-label">메모</span>
+        <textarea class="field-textarea" id="ef-notes" style="min-height:60px">${escapeHtml(data.notes || '')}</textarea></div>
+    `;
+    document.getElementById('edit-form-overlay').classList.add('open');
+  } catch (e) { showToast('로드 실패: ' + e.message); }
+}
+
+function closeEditForm() {
+  document.getElementById('edit-form-overlay').classList.remove('open');
+  _editTarget = null;
+}
+
+async function saveEditForm() {
+  if (!_editTarget) return;
+  const { kind, id } = _editTarget;
+  const v = (sel) => document.getElementById(sel)?.value?.trim() || null;
+  const vNum = (sel) => { const n = parseFloat(document.getElementById(sel)?.value); return isNaN(n) ? null : n; };
+  try {
+    if (kind === 'reservation') {
+      await Cloud.reservations.upsert({
+        id, trip_id: TRIP.cloud_id,
+        type: document.getElementById('ef-type').value,
+        title: v('ef-title') || '제목 없음',
+        start_date: v('ef-start'),
+        end_date: v('ef-end'),
+        confirmation_code: v('ef-code'),
+        url: v('ef-url'),
+        amount: vNum('ef-amount'),
+        notes: v('ef-notes'),
+      });
+    } else if (kind === 'lodging') {
+      await Cloud.lodgings.upsert({
+        id, trip_id: TRIP.cloud_id,
+        name: v('ef-name') || '숙소',
+        type: document.getElementById('ef-lodge-type').value,
+        city: v('ef-city'),
+        address: v('ef-address'),
+        check_in: v('ef-checkin'),
+        check_out: v('ef-checkout'),
+        reservation_code: v('ef-code'),
+        reservation_url: v('ef-url'),
+        amount: vNum('ef-amount'),
+        notes: v('ef-notes'),
+      });
+    }
+    showToast('✅ 저장됨');
+    closeEditForm();
+    renderReservationsSheet();
+  } catch (e) {
+    showToast('저장 실패: ' + e.message);
+  }
 }
 
 async function addLodging() {
@@ -2520,6 +2797,7 @@ async function openTrip(id) {
   renderProgress();
   renderTimeline();
   renderMyMapsForTrip();
+  renderDesktopSidebar();
 
   // 날씨 스트립 로딩 표시 복구
   const ws = document.getElementById('weather-strip');
@@ -2971,12 +3249,19 @@ async function onNotionZipSelected(event) {
   if (!file) return;
   if (!window.NotionZip?.enabled) { showToast('ZIP 파서 로드 실패. 페이지를 새로고침해주세요.'); return; }
   const info = document.getElementById('notion-zip-info');
+  info.style.color = '';
   info.style.display = 'block';
   info.textContent = `📦 ${file.name} 분석 중...`;
   try {
-    const result = await NotionZip.parseFile(file);
+    const result = await NotionZip.parseFile(file, { maxChars: 200000 });
     document.getElementById('wizard-prompt').value = result.combinedText;
-    info.innerHTML = `✅ ${file.name} 분석 완료 — ${result.includedCount}/${result.fileCount}개 파일${result.truncated ? ' (길이 제한으로 일부 생략)' : ''}. 아래 "AI 변환 시작" 누르면 트립 생성.`;
+    let msg = `✅ ${file.name} 분석 완료 — ${result.includedCount}/${result.fileCount}개 파일 포함`;
+    if (result.truncated) {
+      msg += `<br>⚠️ 큰 export입니다. 일부 파일은 길이 제한으로 생략되었어요. 핵심 부분만 적었으면 "AI 변환 시작" 누르세요.`;
+    } else {
+      msg += `. 아래 "AI 변환 시작" 누르면 트립 생성.`;
+    }
+    info.innerHTML = msg;
   } catch (err) {
     info.style.color = '#ff8a8a';
     info.textContent = '❌ 파싱 실패: ' + (err.message || err);
@@ -3110,6 +3395,94 @@ async function renameTrip() {
   document.getElementById('trip-title').textContent = `${TRIP.emoji || ''} ${TRIP.name}`.trim();
   showToast('✏️ 이름 변경됨');
   _bgPushTrip(TRIP);
+}
+
+/* ── 데스크탑 사이드 패널 요약 위젯 ─────────────── */
+async function renderDesktopSidebar() {
+  const sb = document.getElementById('desktop-sidebar');
+  if (!sb || !TRIP) return;
+  const isWide = window.innerWidth >= 900;
+  if (!isWide) { sb.innerHTML = ''; return; }
+
+  // 카운트다운
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const cd = tripCountdown(TRIP.startDate, TRIP.endDate);
+
+  // 진행률
+  const allItems = DAYS.flatMap(d => d.items || []);
+  const doneCount = allItems.filter(it => checkedItems[it.id]).length;
+  const totalCount = allItems.length;
+  const pct = totalCount ? Math.round((doneCount / totalCount) * 100) : 0;
+
+  // 지출 합계
+  const sym = currencySymbol((TRIP && TRIP.currency) || 'JPY');
+  const hsym = currencySymbol((TRIP && TRIP.homeCurrency) || 'KRW');
+  let totalSpent = 0;
+  Object.values(expenses || {}).forEach(arr => {
+    normalizeExpenses(arr).forEach(e => totalSpent += (e.amount || 0));
+  });
+  const totalBudget = (BUDGET || []).reduce((s, b) => s + (b.amount || 0), 0);
+
+  // 다가오는 예약·체크인 (클라우드 트립일 때만)
+  let upcomingHTML = '';
+  if (_currentUser && TRIP.cloud_id) {
+    try {
+      const [resvs, lodges] = await Promise.all([
+        Cloud.reservations.listByTrip(TRIP.cloud_id),
+        Cloud.lodgings.listByTrip(TRIP.cloud_id),
+      ]);
+      const events = [];
+      resvs.forEach(r => { if (r.start_date && r.start_date >= todayStr) events.push({ date: r.start_date, kind: 'resv', type: r.type, title: r.title }); });
+      lodges.forEach(l => { if (l.check_in && l.check_in >= todayStr) events.push({ date: l.check_in, kind: 'lodge', title: '🛏️ ' + l.name }); });
+      events.sort((a, b) => a.date.localeCompare(b.date));
+      if (events.length > 0) {
+        upcomingHTML = `
+          <div class="summary-card">
+            <div class="summary-card-title">다가오는 일정</div>
+            ${events.slice(0, 4).map(e => {
+              const days = Math.round((new Date(e.date) - new Date(todayStr)) / 86400000);
+              const emoji = e.kind === 'lodge' ? '' : (e.type === '항공' ? '✈️ ' : e.type === '기차' ? '🚄 ' : e.type === '렌터카' ? '🚗 ' : '📌 ');
+              return `<div class="summary-card-row">
+                <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;margin-right:6px">${emoji}${escapeHtml(e.title || '')}</span>
+                <span class="countdown-pill ${days <= 1 ? 'urgent' : ''}">D-${days}</span>
+              </div>`;
+            }).join('')}
+          </div>
+        `;
+      }
+    } catch (e) { /* 무시 */ }
+  }
+
+  sb.innerHTML = `
+    <div class="summary-card">
+      <div class="summary-card-title">${TRIP.emoji || '✈️'} ${escapeHtml(TRIP.name || '')}</div>
+      <div class="summary-card-big" style="margin-bottom:4px">${cd.label}</div>
+      <div style="font-size:11px;color:var(--muted)">${fmtDateRange(TRIP.startDate, TRIP.endDate)} · ${DAYS.length}일</div>
+    </div>
+
+    <div class="summary-card">
+      <div class="summary-card-title">진행률</div>
+      <div class="summary-card-row">
+        <span>완료한 일정</span>
+        <span style="font-weight:700">${doneCount} / ${totalCount}</span>
+      </div>
+      <div class="tracker-bar" style="margin-top:6px"><div class="tracker-fill" style="width:${pct}%;background:var(--day-color)"></div></div>
+    </div>
+
+    <div class="summary-card">
+      <div class="summary-card-title">지출</div>
+      <div class="summary-card-row">
+        <span>합계</span>
+        <span style="font-weight:700;color:var(--day-color)">${sym}${totalSpent.toLocaleString()}</span>
+      </div>
+      ${totalBudget > 0 ? `<div class="summary-card-row" style="font-size:11px;color:var(--muted)">
+        <span>예산</span>
+        <span>${sym}${totalBudget.toLocaleString()}</span>
+      </div>` : ''}
+    </div>
+
+    ${upcomingHTML}
+  `;
 }
 
 /* ── 구글 내지도 임베드 ──────────────────────────── */
