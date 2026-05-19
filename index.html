@@ -939,6 +939,20 @@
       </div>
     </div>
 
+    <!-- 구글맵 -->
+    <div>
+      <div class="section-title">구글맵 (선택)</div>
+      <div class="field">
+        <span class="field-label">Google Maps API 키</span>
+        <input type="password" class="field-input" id="key-gmaps" placeholder="AIza..." autocomplete="off">
+        <span class="field-hint">
+          입력하면 트립 메뉴에서 <b>"전체 지도 보기"</b> 사용 가능.<br>
+          ⚠️ <a href="https://console.cloud.google.com/apis/credentials" target="_blank">GCP Console</a>에서 <b>HTTP 리퍼러 제한</b>(<code>https://kkyyuu99.github.io/*</code>)과 <b>할당량</b>을 꼭 설정하세요.<br>
+          무료 한도: 매월 $200 크레딧 (Geocoding 약 4만 건). 키는 이 기기에만 저장됩니다.
+        </span>
+      </div>
+    </div>
+
     <!-- 통화 -->
     <div class="field">
       <span class="field-label">모국 통화</span>
@@ -1102,6 +1116,10 @@
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
     공유 / 멤버
   </div>
+  <div class="menu-item" onclick="openTripMapView()">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 6l7-3 8 3 7-3v15l-7 3-8-3-7 3z"/><path d="M8 3v15M16 6v15"/></svg>
+    전체 지도 보기 (모든 일정 핀)
+  </div>
   <div class="menu-item" onclick="openMyMapsModal()">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
     구글 내지도 연결
@@ -1117,6 +1135,20 @@
   <div class="menu-item danger" onclick="deleteCurrentTrip()">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 01-2 2H9a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
     삭제
+  </div>
+</div>
+
+<!-- ── 전체 지도 보기 (풀스크린) ──────────────────── -->
+<div class="modal-overlay" id="trip-map-overlay" onclick="if(event.target===this)closeTripMapView()">
+  <div class="modal" style="position:relative; max-width:90vw; width:900px; padding:14px; height:90vh; display:flex; flex-direction:column">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+      <div style="font-size:15px;font-weight:700">🗺️ <span id="trip-map-title">전체 지도</span></div>
+      <button class="icon-btn" onclick="closeTripMapView()" aria-label="닫기">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div id="trip-map-info" style="font-size:11px;color:var(--muted);margin:6px 0;flex-shrink:0"></div>
+    <div id="trip-map-canvas" style="flex:1;min-height:300px;border-radius:10px;overflow:hidden;border:1px solid var(--border);background:var(--surface2)"></div>
   </div>
 </div>
 
@@ -1339,13 +1371,14 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-<script src="js/supabase-config.js?v=11"></script>
-<script src="js/cloud.js?v=11"></script>
-<script src="js/seed.js?v=11"></script>
-<script src="js/db.js?v=11"></script>
-<script src="js/ai.js?v=11"></script>
-<script src="js/sync.js?v=11"></script>
-<script src="js/notion-zip.js?v=11"></script>
+<script src="js/supabase-config.js?v=12"></script>
+<script src="js/cloud.js?v=12"></script>
+<script src="js/seed.js?v=12"></script>
+<script src="js/db.js?v=12"></script>
+<script src="js/ai.js?v=12"></script>
+<script src="js/sync.js?v=12"></script>
+<script src="js/notion-zip.js?v=12"></script>
+<script src="js/maps.js?v=12"></script>
 <script>
 /* ── DATA (현재 열린 여행에서 동적으로 채워짐) ── */
 let TRIP = null;          // 현재 열린 여행 객체 (IndexedDB에서)
@@ -3179,6 +3212,7 @@ async function openSettings() {
   document.getElementById('key-gemini').value = (await TripDB.settings.get('apiKey.gemini', '')) || '';
   document.getElementById('key-claude').value = (await TripDB.settings.get('apiKey.claude', '')) || '';
   document.getElementById('key-openai').value = (await TripDB.settings.get('apiKey.openai', '')) || '';
+  document.getElementById('key-gmaps').value = (await TripDB.settings.get('googleMapsApiKey', '')) || '';
   document.getElementById('home-currency').value = await TripDB.settings.get('homeCurrency', 'KRW');
   showScreen('settings');
 }
@@ -3196,6 +3230,7 @@ async function saveSettings() {
   await TripDB.settings.set('apiKey.gemini', document.getElementById('key-gemini').value.trim());
   await TripDB.settings.set('apiKey.claude', document.getElementById('key-claude').value.trim());
   await TripDB.settings.set('apiKey.openai', document.getElementById('key-openai').value.trim());
+  await TripDB.settings.set('googleMapsApiKey', document.getElementById('key-gmaps').value.trim());
   await TripDB.settings.set('homeCurrency', document.getElementById('home-currency').value);
   showToast('✅ 설정 저장됨');
   showScreen('list');
@@ -3483,6 +3518,41 @@ async function renderDesktopSidebar() {
 
     ${upcomingHTML}
   `;
+}
+
+/* ── 전체 지도 (Google Maps JS API) ──────────────── */
+async function openTripMapView() {
+  document.getElementById('trip-menu').classList.remove('open');
+  if (!TRIP) return;
+
+  const apiKey = await MapsKit.getApiKey();
+  if (!apiKey) {
+    showToast('설정에서 구글맵 API 키를 먼저 등록하세요');
+    showScreen('settings');
+    setTimeout(() => document.getElementById('key-gmaps')?.focus(), 200);
+    return;
+  }
+
+  document.getElementById('trip-map-title').textContent = `${TRIP.emoji || '✈️'} ${TRIP.name} — 전체 지도`;
+  const info = document.getElementById('trip-map-info');
+  info.textContent = '지도 로딩 중...';
+  document.getElementById('trip-map-overlay').classList.add('open');
+
+  const canvas = document.getElementById('trip-map-canvas');
+  canvas.innerHTML = '';
+
+  try {
+    const result = await MapsKit.renderTripMap(canvas, TRIP);
+    const itemTotal = (TRIP.days || []).reduce((s, d) => s + (d.items || []).length, 0);
+    info.innerHTML = `<b>${result.markerCount}</b>개 마커 / 전체 ${itemTotal}개 일정${result.geocodedNow ? ` · 새로 ${result.geocodedNow}개 위치 검색됨` : ''}`;
+  } catch (e) {
+    canvas.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#ff8a8a;font-size:13px;padding:24px;text-align:center">지도 로드 실패: ${e.message}<br><br>키 제한·할당량 설정을 확인하세요.</div>`;
+    info.textContent = '';
+  }
+}
+
+function closeTripMapView() {
+  document.getElementById('trip-map-overlay').classList.remove('open');
 }
 
 /* ── 구글 내지도 임베드 ──────────────────────────── */

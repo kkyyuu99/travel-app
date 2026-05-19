@@ -1,6 +1,6 @@
 // Travel PWA — Service Worker
 // 캐시 버전을 올리면 모든 사용자가 새 번들을 받습니다.
-const CACHE_VERSION = 'v11';
+const CACHE_VERSION = 'v12';
 const STATIC_CACHE = `travel-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `travel-runtime-${CACHE_VERSION}`;
 
@@ -9,13 +9,14 @@ const PRECACHE_URLS = [
   './',
   './index.html',
   './manifest.json',
-  './js/seed.js?v=10',
-  './js/db.js?v=10',
-  './js/ai.js?v=10',
-  './js/supabase-config.js?v=10',
-  './js/cloud.js?v=10',
-  './js/sync.js?v=10',
-  './js/notion-zip.js?v=10',
+  './js/seed.js?v=12',
+  './js/db.js?v=12',
+  './js/ai.js?v=12',
+  './js/supabase-config.js?v=12',
+  './js/cloud.js?v=12',
+  './js/sync.js?v=12',
+  './js/notion-zip.js?v=12',
+  './js/maps.js?v=12',
   './icons/icon.svg',
   './icons/icon-maskable.svg',
   './icons/icon-192.png',
@@ -33,6 +34,8 @@ const NETWORK_FIRST_HOSTS = [
   'api.anthropic.com',                   // Claude
   'api.openai.com',                      // OpenAI
   'ygusohacqkwzrwwlaefc.supabase.co',    // Supabase REST/Auth
+  'maps.googleapis.com',                 // Google Maps JS API + Geocoding
+  'maps.gstatic.com',                    // Google Maps assets
 ];
 
 self.addEventListener('install', (event) => {
