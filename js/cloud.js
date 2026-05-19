@@ -308,6 +308,97 @@
     },
   };
 
+  // ── Realtime (공유 트립 실시간 변경 감지) ───────
+  const realtime = {
+    // 현재 구독 핸들 (트립 1개에 대해 1개 채널)
+    _channel: null,
+    // tripCloudId의 모든 관련 테이블 변경을 구독. 콜백: ({table, eventType, new, old})
+    subscribe(tripCloudId, cb) {
+      this.unsubscribe();
+      this._channel = client.channel('trip-' + tripCloudId)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'trips', filter: `id=eq.${tripCloudId}` },
+            (p) => cb({ table: 'trips', ...p }))
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'days', filter: `trip_id=eq.${tripCloudId}` },
+            (p) => cb({ table: 'days', ...p }))
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'places', filter: `trip_id=eq.${tripCloudId}` },
+            (p) => cb({ table: 'places', ...p }))
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'expenses', filter: `trip_id=eq.${tripCloudId}` },
+            (p) => cb({ table: 'expenses', ...p }))
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'packing_items', filter: `trip_id=eq.${tripCloudId}` },
+            (p) => cb({ table: 'packing_items', ...p }))
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'lodgings', filter: `trip_id=eq.${tripCloudId}` },
+            (p) => cb({ table: 'lodgings', ...p }))
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'reservations', filter: `trip_id=eq.${tripCloudId}` },
+            (p) => cb({ table: 'reservations', ...p }))
+        .subscribe();
+    },
+    unsubscribe() {
+      if (this._channel) {
+        client.removeChannel(this._channel);
+        this._channel = null;
+      }
+    },
+  };
+
+  // ── Storage (사진 첨부) ───────────────────────────
+  const storage = {
+    async uploadTripPhoto(tripCloudId, file, opts = {}) {
+      const user = await auth.user();
+      if (!user) throw new Error('로그인 필요');
+      if (!tripCloudId) throw new Error('동기화된 트립이어야 사진 업로드 가능');
+      const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+      const path = `${tripCloudId}/${user.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error } = await client.storage.from('trip-photos').upload(path, file, {
+        cacheControl: '3600',
+        contentType: file.type || 'image/jpeg',
+        upsert: false,
+      });
+      if (error) throw error;
+      const { data } = client.storage.from('trip-photos').getPublicUrl(path);
+      return { path, publicUrl: data.publicUrl };
+    },
+    async deletePhoto(path) {
+      const { error } = await client.storage.from('trip-photos').remove([path]);
+      if (error) throw error;
+    },
+  };
+
+  // ── Lodgings (숙소) ───────────────────────────────
+  const lodgings = {
+    async listByTrip(tripId) {
+      const { data, error } = await client.from('lodgings').select('*').eq('trip_id', tripId).order('check_in', { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+    async upsert(l) {
+      const { data, error } = await client.from('lodgings').upsert(l).select().single();
+      if (error) throw error;
+      return data;
+    },
+    async remove(id) {
+      const { error } = await client.from('lodgings').delete().eq('id', id);
+      if (error) throw error;
+    },
+  };
+
+  // ── Reservations (예약) ───────────────────────────
+  const reservations = {
+    async listByTrip(tripId) {
+      const { data, error } = await client.from('reservations').select('*').eq('trip_id', tripId).order('start_date', { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+    async upsert(r) {
+      const { data, error } = await client.from('reservations').upsert(r).select().single();
+      if (error) throw error;
+      return data;
+    },
+    async remove(id) {
+      const { error } = await client.from('reservations').delete().eq('id', id);
+      if (error) throw error;
+    },
+  };
+
   // ── 연결 상태 ──────────────────────────────────────
   async function ping() {
     try {
@@ -330,6 +421,10 @@
     packing,
     members,
     userState,
+    realtime,
+    storage,
+    lodgings,
+    reservations,
     ping,
   };
 })();

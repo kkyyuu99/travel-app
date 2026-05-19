@@ -672,6 +672,17 @@
   .pack-item.done .pack-text { text-decoration: line-through; color: var(--muted); }
   .pack-item .del { font-size: 14px; color: rgba(255,255,255,0.2); cursor: pointer; padding: 0 4px; }
 
+  /* ── Inline maps (구글맵 iframe) ─────────────────── */
+  .tl-map-embed {
+    width: 100%; height: 200px; border: 1px solid var(--border); border-radius: 10px;
+    margin-top: 8px; background: var(--surface2);
+  }
+  .my-maps-wrap {
+    width: 100%; height: 400px; border: 1px solid var(--border); border-radius: 12px;
+    background: var(--surface2); margin-top: 8px;
+  }
+  .my-maps-wrap iframe { width: 100%; height: 100%; border: 0; border-radius: 12px; }
+
   /* ── Day tabs: 60일 스케일링 ─────────────────────── */
   #day-tabs { display: flex; gap: 4px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: thin; padding-bottom: 4px; }
   #day-tabs::-webkit-scrollbar { height: 4px; }
@@ -897,13 +908,68 @@
 
     <!-- 정보 -->
     <div>
-      <div class="section-title">정보</div>
+      <div class="section-title">도움말 & 정보</div>
+      <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px">
+        <button class="secondary-btn" onclick="showScreen('guide')">📖 부모님·초보자 가입 가이드 보기</button>
+      </div>
       <div style="font-size:11px; color:var(--muted); line-height:1.7">
         Travel PWA · 오프라인 우선<br>
         날씨: <a href="https://open-meteo.com" target="_blank" style="color:#4fc3f7;text-decoration:none">Open-Meteo</a> (ECMWF/DWD)<br>
         환율: <a href="https://frankfurter.dev" target="_blank" style="color:#4fc3f7;text-decoration:none">Frankfurter</a> (ECB 참조환율)<br>
         <a href="https://github.com/kkyyuu99/travel-app" target="_blank" style="color:#4fc3f7;text-decoration:none">GitHub 소스</a>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── 화면 5: 부모님·초보자 가입 가이드 ──────────── -->
+<div id="screen-guide" class="screen screen-pad">
+  <div class="screen-topbar">
+    <button class="back-btn" onclick="showScreen('list')" aria-label="뒤로">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <h2>처음 사용하시는 분께 — 가입 안내</h2>
+  </div>
+  <div class="screen-content">
+    <div style="font-size:14px;line-height:1.7;color:var(--text)">
+      <p style="margin-bottom:14px">안녕하세요! 이 앱은 노션처럼 복잡하지 않고, <b>여행 중 폰으로 빠르게 기록</b>할 수 있게 만들어진 도구예요. 천천히 따라하시면 됩니다.</p>
+
+      <div class="section-title">1단계 — 앱 설치 (한 번만)</div>
+      <ol style="padding-left:20px;font-size:13px;line-height:1.8">
+        <li><b>안드로이드 폰:</b> 크롬 브라우저로 <a href="https://kkyyuu99.github.io/travel-app/" target="_blank" style="color:#4fc3f7">kkyyuu99.github.io/travel-app</a> 접속</li>
+        <li>주소창 옆 ⋮ 메뉴 → <b>"앱 설치"</b> 또는 <b>"홈 화면에 추가"</b> 누르기</li>
+        <li>아이폰: 사파리에서 같은 주소 → 공유 버튼 → <b>"홈 화면에 추가"</b></li>
+      </ol>
+      <div style="font-size:11px;color:var(--muted);margin-top:6px">→ 홈화면에 앱 아이콘 생김. 진짜 앱처럼 작동해요.</div>
+
+      <div class="section-title" style="margin-top:18px">2단계 — 회원가입 (한 번만)</div>
+      <ol style="padding-left:20px;font-size:13px;line-height:1.8">
+        <li>앱 첫 화면 위에 <b>"⚪ 로컬 모드 · 로그인 →"</b> 표시 누르기</li>
+        <li><b>"회원가입"</b> 탭 선택</li>
+        <li>이메일 + 비밀번호(6자 이상) + 이름(선택) 입력 → <b>"가입 신청 & 인증코드 발송"</b></li>
+        <li>이메일 메일함 확인 (스팸함도 꼭 확인) → 6자리 숫자 코드 복사</li>
+        <li>앱으로 돌아와서 코드 붙여넣기 → <b>"인증 완료 & 로그인"</b></li>
+      </ol>
+
+      <div class="section-title" style="margin-top:18px">3단계 — 자녀가 공유한 여행 받기</div>
+      <ol style="padding-left:20px;font-size:13px;line-height:1.8">
+        <li>자녀에게 가입 완료 후 사용한 <b>이메일 주소</b>를 알려주세요</li>
+        <li>자녀가 그 이메일로 여행을 공유해주면, 자동으로 여행 목록에 나타나요</li>
+        <li>앱을 닫았다가 다시 열면 보일 수도 있어요 (자동 동기화)</li>
+      </ol>
+
+      <div class="section-title" style="margin-top:18px">여행 중 자주 쓰는 기능</div>
+      <ul style="padding-left:20px;font-size:13px;line-height:1.8">
+        <li>🗓️ <b>일정</b> — 일자별 동선이 시간순으로 정리됨. 가본 곳 ✓ 체크</li>
+        <li>📝 <b>메모</b> — 각 장소 카드 펼쳐서 ✏️ 누르고 자유롭게 기록. 사진도 첨부 가능</li>
+        <li>💴 <b>가계부</b> — 하단 [가계부] → 금액 입력 + 카테고리 선택 → 추가</li>
+        <li>📍 <b>구글지도</b> — 각 항목에 지도 미리보기. 탭 시 구글맵 앱 열림</li>
+      </ul>
+
+      <div class="section-title" style="margin-top:18px">막히는 게 있으면</div>
+      <p style="font-size:13px;line-height:1.7">자녀한테 화면을 캡처해서 보내주세요. 멀리서도 같은 여행을 보고 있으니 바로 도와드릴 수 있어요.</p>
+
+      <button class="primary-btn" style="margin-top:20px" onclick="copyGuideLink()">📋 이 가이드 링크 복사 (부모님께 전송)</button>
     </div>
   </div>
 </div>
@@ -920,9 +986,14 @@
     <!-- Step 1: 입력 -->
     <div class="wizard-step active" id="step-input">
       <div class="field">
-        <span class="field-label" id="wizard-input-label">여행 설명</span>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <span class="field-label" id="wizard-input-label">여행 설명</span>
+          <button class="auth-link" id="wizard-zip-btn" style="display:none;font-size:11px" onclick="document.getElementById('notion-zip-input').click()">📁 노션 ZIP 불러오기</button>
+        </div>
         <textarea class="field-textarea" id="wizard-prompt" placeholder="예) 5월 25일부터 3박4일 도쿄, 라멘이랑 애니메이션 좋아함, 1인 50만원 예산. 시부야 숙소."></textarea>
         <span class="field-hint" id="wizard-input-hint">목적지·날짜·일수·예산·취향·동행자 등을 자유롭게 적어주세요. 자세할수록 좋아요.</span>
+        <input type="file" id="notion-zip-input" accept=".zip" style="display:none" onchange="onNotionZipSelected(event)">
+        <div id="notion-zip-info" style="font-size:11px;color:#4fc3f7;display:none"></div>
       </div>
       <button class="primary-btn" id="generate-btn" onclick="generateTrip()">
         ✨ AI로 일정 생성
@@ -973,6 +1044,10 @@
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
     공유 / 멤버
   </div>
+  <div class="menu-item" onclick="openMyMapsModal()">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+    구글 내지도 연결
+  </div>
   <div class="menu-item" onclick="exportCurrentTrip()">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12l7-7 7 7"/></svg>
     이 여행 내보내기
@@ -984,6 +1059,26 @@
   <div class="menu-item danger" onclick="deleteCurrentTrip()">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 01-2 2H9a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
     삭제
+  </div>
+</div>
+
+<!-- ── 내지도 설정 모달 ───────────────────────────── -->
+<div class="modal-overlay" id="mymaps-modal" onclick="if(event.target===this)closeMyMapsModal()">
+  <div class="modal" style="position:relative; max-width:480px">
+    <button class="icon-btn modal-close" onclick="closeMyMapsModal()" aria-label="닫기">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </button>
+    <div class="modal-title">구글 내지도 연결</div>
+    <div class="modal-sub">
+      본인이 만든 <a href="https://mymaps.google.com" target="_blank" style="color:#4fc3f7">구글 내지도(My Maps)</a>를 이 여행에 붙여서 핀·경로를 그대로 볼 수 있어요.
+    </div>
+    <div class="field">
+      <span class="field-label">내지도 공유 링크 또는 임베드 URL</span>
+      <input type="url" class="field-input" id="mymaps-url" placeholder="https://www.google.com/maps/d/embed?mid=...">
+      <span class="field-hint">My Maps에서 <b>공유 → 공개</b> 후 임베드 URL을 복사해 붙여넣으세요.<br>일반 mymaps 보기 링크도 자동으로 임베드용으로 변환합니다.</span>
+    </div>
+    <button class="primary-btn" onclick="saveMyMapsUrl()">저장</button>
+    <button class="secondary-btn" onclick="clearMyMapsUrl()">연결 해제</button>
   </div>
 </div>
 
@@ -1020,6 +1115,8 @@
   </div>
 </div>
 
+<div id="mymaps-container" style="display:none; padding: 0 12px 8px"></div>
+
 <div id="progress-bar"><div id="progress-fill"></div></div>
 
 <div id="scroll-area"></div>
@@ -1040,6 +1137,10 @@
   <button class="nav-btn" id="nav-pack" onclick="openSheet('pack')">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 2H8a2 2 0 00-2 2v2H4a1 1 0 00-1 1v13a2 2 0 002 2h14a2 2 0 002-2V7a1 1 0 00-1-1h-2V4a2 2 0 00-2-2z"/><path d="M8 2v4M16 2v4"/></svg>
     준비물
+  </button>
+  <button class="nav-btn" id="nav-resv" onclick="openSheet('resv')">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+    예약
   </button>
   <button class="nav-btn" id="nav-currency" onclick="openSheet('currency')">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/><path d="M15 9a3 3 0 00-6 0c0 2 3 3 3 3s3 1 3 3a3 3 0 01-6 0"/></svg>
@@ -1160,12 +1261,14 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="js/supabase-config.js?v=9"></script>
-<script src="js/cloud.js?v=9"></script>
-<script src="js/seed.js?v=9"></script>
-<script src="js/db.js?v=9"></script>
-<script src="js/ai.js?v=9"></script>
-<script src="js/sync.js?v=9"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script src="js/supabase-config.js?v=10"></script>
+<script src="js/cloud.js?v=10"></script>
+<script src="js/seed.js?v=10"></script>
+<script src="js/db.js?v=10"></script>
+<script src="js/ai.js?v=10"></script>
+<script src="js/sync.js?v=10"></script>
+<script src="js/notion-zip.js?v=10"></script>
 <script>
 /* ── DATA (현재 열린 여행에서 동적으로 채워짐) ── */
 let TRIP = null;          // 현재 열린 여행 객체 (IndexedDB에서)
@@ -1617,7 +1720,13 @@ function renderTimeline() {
             ${item.desc.includes('\n') ? item.desc.split('\n').slice(1).map(l=>`<p style="font-size:11px;color:rgba(255,255,255,0.55);margin-bottom:5px;padding-left:8px;border-left:2px solid color-mix(in srgb,${day.color} 30%,transparent);line-height:1.5">${l}</p>`).join('') : ''}
             ${item.cost ? `<div class="tl-cost"><span>💴</span><span>${item.cost}</span></div>` : ''}
             ${item.tip ? `<div class="tl-tip"><span>💡</span><span>${item.tip}</span></div>` : ''}
-            ${item.map ? `<a class="map-link" href="https://maps.google.com/maps?q=${encodeURIComponent(item.map)}" target="_blank">📍 구글 지도에서 보기</a>` : ''}
+            ${item.map ? `
+              <iframe class="tl-map-embed" loading="lazy"
+                src="https://www.google.com/maps?q=${encodeURIComponent(item.map)}&output=embed"
+                referrerpolicy="no-referrer-when-downgrade"
+                allow="fullscreen"></iframe>
+              <a class="map-link" href="https://maps.google.com/maps?q=${encodeURIComponent(item.map)}" target="_blank">📍 구글 지도 앱에서 열기</a>
+            ` : ''}
             <div class="memo-area">
               <button class="memo-btn ${memo?'has-memo':''}" id="memobtn-${item.id}" onclick="openMemo('${item.id}')">
                 ✏️ ${memo || '메모 추가...'}
@@ -1627,6 +1736,7 @@ function renderTimeline() {
                 <div class="memo-actions">
                   <button class="btn-save" onclick="saveMemo('${item.id}')">저장</button>
                   <button class="btn-cancel" onclick="closeMemo('${item.id}')">취소</button>
+                  <button class="btn-save" style="background:rgba(79,195,247,0.18);color:#4fc3f7" onclick="pickAndUploadPhoto('${item.id}')">📸 사진</button>
                   ${memo ? `<button class="btn-del" onclick="deleteMemo('${item.id}')">삭제</button>` : ''}
                 </div>
               </div>
@@ -1752,6 +1862,37 @@ function deleteMemo(id) {
   renderTimeline();
 }
 
+/* ── 사진 첨부 (Storage) ──────────────────────────── */
+async function pickAndUploadPhoto(itemId) {
+  if (!_currentUser) { showToast('로그인 후 사진 업로드 가능'); return; }
+  if (!TRIP?.cloud_id) { showToast('동기화된 트립이어야 업로드 가능'); return; }
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*';
+  input.onchange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) { showToast('10MB 이하만 업로드 가능'); return; }
+    showToast('☁️ 업로드 중...');
+    try {
+      const { publicUrl } = await Cloud.storage.uploadTripPhoto(TRIP.cloud_id, file);
+      // 메모에 마크다운으로 추가
+      const current = memos[itemId] || '';
+      const link = `![photo](${publicUrl})`;
+      memos[itemId] = current ? current + '\n' + link : link;
+      await saveMemos();
+      // textarea 갱신
+      const txt = document.getElementById('memotext-' + itemId);
+      if (txt) txt.value = memos[itemId];
+      renderTimeline();
+      showToast('📸 사진 업로드됨');
+    } catch (err) {
+      showToast('업로드 실패: ' + err.message);
+    }
+  };
+  input.click();
+}
+
 /* ── VIEW SWITCH ── */
 function switchView(view) {
   currentView = view;
@@ -1779,6 +1920,7 @@ function openSheet(type) {
   if (type === 'budget') renderBudgetSheet();
   else if (type === 'currency') renderCurrencySheet();
   else if (type === 'pack') renderPackSheet();
+  else if (type === 'resv') renderReservationsSheet();
 }
 function closeSheet() {
   document.getElementById('main-sheet').classList.remove('open');
@@ -2035,6 +2177,150 @@ function removePack(id) {
   renderPackSheet();
 }
 
+/* ── RESERVATIONS + LODGINGS SHEET ──────────────── */
+const RESV_TYPES = ['항공','기차','렌터카','투어','입장권','숙소','기타'];
+
+async function renderReservationsSheet() {
+  document.getElementById('sheet-title').textContent = '예약 & 숙소';
+  document.getElementById('sheet-tabs').innerHTML = '';
+  const color = DAY_COLORS[activeDay] || '#4fc3f7';
+  document.documentElement.style.setProperty('--day-color', color);
+
+  if (!_currentUser) {
+    document.getElementById('sheet-body').innerHTML = `
+      <div style="padding:24px;text-align:center;color:var(--muted);font-size:13px">
+        예약·숙소 기능은 클라우드 동기화가 필요해요.<br>먼저 <a href="#" onclick="closeSheet();openSignIn();return false" style="color:#4fc3f7">로그인</a>하세요.
+      </div>`;
+    return;
+  }
+  if (!TRIP.cloud_id) {
+    try { await Sync.pushTrip(TRIP); }
+    catch (e) {
+      document.getElementById('sheet-body').innerHTML = `<div style="padding:16px;color:#ff8a8a;font-size:12px">동기화 실패: ${e.message}</div>`;
+      return;
+    }
+  }
+
+  let reservations = [], lodgings = [];
+  try {
+    [reservations, lodgings] = await Promise.all([
+      Cloud.reservations.listByTrip(TRIP.cloud_id),
+      Cloud.lodgings.listByTrip(TRIP.cloud_id),
+    ]);
+  } catch (e) {
+    document.getElementById('sheet-body').innerHTML = `<div style="padding:16px;color:#ff8a8a;font-size:12px">불러오기 실패: ${e.message}</div>`;
+    return;
+  }
+
+  document.getElementById('sheet-body').innerHTML = `
+    <!-- 예약 추가 폼 -->
+    <div class="expense-add-form">
+      <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:4px">새 예약 추가</div>
+      <div class="expense-row-flex">
+        <select class="field-select" id="resv-type">
+          ${RESV_TYPES.map(t => `<option>${t}</option>`).join('')}
+        </select>
+        <input class="field-input" id="resv-title" type="text" placeholder="제목 (예: 이스타항공 ZE605)">
+      </div>
+      <div class="expense-row-flex">
+        <input class="field-input" id="resv-date" type="date" title="시작일">
+        <input class="field-input" id="resv-code" type="text" placeholder="확인번호 (선택)">
+      </div>
+      <input class="field-input" id="resv-url" type="url" placeholder="예약 URL (선택)">
+      <button class="primary-btn" style="background:${color}" onclick="addReservation()">추가</button>
+    </div>
+
+    <div class="expense-list">
+      ${reservations.length === 0 ? '<div style="font-size:12px;color:var(--muted);padding:8px 12px">예약이 없어요.</div>' : reservations.map(r => `
+        <div class="expense-row">
+          <span class="cat">${r.type || '기타'}</span>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.title}</div>
+            <div style="font-size:10px;color:var(--muted)">${r.start_date || ''}${r.confirmation_code ? ' · ' + r.confirmation_code : ''}</div>
+          </div>
+          ${r.url ? `<a href="${r.url}" target="_blank" style="font-size:11px;color:#4fc3f7;text-decoration:none">열기</a>` : ''}
+          <span class="del" onclick="deleteReservation('${r.id}')">×</span>
+        </div>
+      `).join('')}
+    </div>
+
+    <div style="margin-top:16px">
+      <div class="section-title">숙소</div>
+      <div class="expense-add-form">
+        <div class="expense-row-flex">
+          <input class="field-input" id="lodge-name" type="text" placeholder="이름 (예: 시부야 호텔)">
+          <input class="field-input" id="lodge-city" type="text" placeholder="도시">
+        </div>
+        <div class="expense-row-flex">
+          <input class="field-input" id="lodge-checkin" type="date" title="체크인">
+          <input class="field-input" id="lodge-checkout" type="date" title="체크아웃">
+        </div>
+        <input class="field-input" id="lodge-code" type="text" placeholder="예약 확인번호 (선택)">
+        <button class="primary-btn" style="background:${color}" onclick="addLodging()">추가</button>
+      </div>
+      <div class="expense-list">
+        ${lodgings.length === 0 ? '<div style="font-size:12px;color:var(--muted);padding:8px 12px">숙소 정보가 없어요.</div>' : lodgings.map(l => `
+          <div class="expense-row">
+            <span class="cat">🏨</span>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l.name}</div>
+              <div style="font-size:10px;color:var(--muted)">${l.check_in || ''} ~ ${l.check_out || ''}${l.city ? ' · ' + l.city : ''}</div>
+            </div>
+            <span class="del" onclick="deleteLodging('${l.id}')">×</span>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+async function addReservation() {
+  const type = document.getElementById('resv-type').value;
+  const title = document.getElementById('resv-title').value.trim();
+  if (!title) { showToast('제목을 입력하세요'); return; }
+  try {
+    await Cloud.reservations.upsert({
+      trip_id: TRIP.cloud_id,
+      type,
+      title,
+      start_date: document.getElementById('resv-date').value || null,
+      confirmation_code: document.getElementById('resv-code').value.trim() || null,
+      url: document.getElementById('resv-url').value.trim() || null,
+    });
+    showToast('✅ 예약 추가됨');
+    renderReservationsSheet();
+  } catch (e) { showToast('실패: ' + e.message); }
+}
+
+async function deleteReservation(id) {
+  if (!confirm('이 예약을 삭제할까요?')) return;
+  try { await Cloud.reservations.remove(id); renderReservationsSheet(); }
+  catch (e) { showToast('실패: ' + e.message); }
+}
+
+async function addLodging() {
+  const name = document.getElementById('lodge-name').value.trim();
+  if (!name) { showToast('숙소 이름을 입력하세요'); return; }
+  try {
+    await Cloud.lodgings.upsert({
+      trip_id: TRIP.cloud_id,
+      name,
+      city: document.getElementById('lodge-city').value.trim() || null,
+      check_in: document.getElementById('lodge-checkin').value || null,
+      check_out: document.getElementById('lodge-checkout').value || null,
+      reservation_code: document.getElementById('lodge-code').value.trim() || null,
+    });
+    showToast('✅ 숙소 추가됨');
+    renderReservationsSheet();
+  } catch (e) { showToast('실패: ' + e.message); }
+}
+
+async function deleteLodging(id) {
+  if (!confirm('이 숙소를 삭제할까요?')) return;
+  try { await Cloud.lodgings.remove(id); renderReservationsSheet(); }
+  catch (e) { showToast('실패: ' + e.message); }
+}
+
 /* ── CURRENCY SHEET ── */
 async function renderCurrencySheet() {
   document.getElementById('sheet-title').textContent = '환율 계산기';
@@ -2125,6 +2411,7 @@ function showScreen(name) {
 
 function backToList() {
   closeSheet();
+  if (window.Cloud?.realtime) Cloud.realtime.unsubscribe();
   TRIP = null;
   renderTripList();
   showScreen('list');
@@ -2232,6 +2519,7 @@ async function openTrip(id) {
   renderTabs();
   renderProgress();
   renderTimeline();
+  renderMyMapsForTrip();
 
   // 날씨 스트립 로딩 표시 복구
   const ws = document.getElementById('weather-strip');
@@ -2240,6 +2528,43 @@ async function openTrip(id) {
   loadWeather();
   loadRate();
   showScreen('detail');
+
+  // Realtime: 공유 트립이면 다른 멤버 변경사항 즉시 반영
+  if (_currentUser && trip.cloud_id && window.Cloud?.realtime) {
+    try {
+      Cloud.realtime.subscribe(trip.cloud_id, async (change) => {
+        // 자기 자신이 한 변경은 ignore (간단한 디바운스 — 더 똑똑하게 하려면 ts 비교)
+        // 일단 단순하게: 변경이 오면 expenses/packing 다시 풀
+        if (change.table === 'expenses' || change.table === 'packing_items') {
+          await _pullExpensesAndPacking();
+          // 가계부 시트가 열려있으면 다시 그리기
+          if (document.getElementById('main-sheet')?.classList.contains('open')) {
+            if (currentSheet === 'budget') renderBudgetTabContent();
+            else if (currentSheet === 'pack') renderPackSheet();
+          }
+        }
+        if (change.table === 'trips' && change.new?.my_maps_url !== TRIP.my_maps_url) {
+          TRIP.my_maps_url = change.new.my_maps_url;
+          renderMyMapsForTrip();
+        }
+        // days/places/routes 변경은 전체 trip 다시 풀 (간단)
+        if (['days','places','routes'].includes(change.table)) {
+          if (window.Sync?.enabled) {
+            try {
+              const fresh = await Sync.pullTrip(TRIP.cloud_id);
+              fresh.id = TRIP.id;
+              await TripDB.trips.put(fresh);
+              TRIP = fresh;
+              DAYS = fresh.days || [];
+              DAY_COLORS = Object.fromEntries(DAYS.map(d => [d.day, d.color]));
+              renderTabs(); renderTimeline();
+              showToast('🔄 다른 기기 변경 반영됨');
+            } catch (e) { console.warn(e.message); }
+          }
+        }
+      });
+    } catch (e) { console.warn('realtime 구독 실패:', e.message); }
+  }
 }
 
 /* ── 테마 (시스템·라이트·다크) ────────────────────── */
@@ -2615,6 +2940,8 @@ function newTrip() {
   _wizardMode = 'ai';
   _generatedTrip = null;
   document.getElementById('wizard-prompt').value = '';
+  document.getElementById('wizard-zip-btn').style.display = 'none';
+  document.getElementById('notion-zip-info').style.display = 'none';
   document.getElementById('wizard-title').textContent = '새 여행 만들기';
   document.getElementById('wizard-input-label').textContent = '여행 설명';
   document.getElementById('wizard-prompt').placeholder = '예) 5월 25일부터 3박4일 도쿄, 라멘이랑 애니메이션 좋아함, 1인 50만원 예산. 시부야 숙소.';
@@ -2628,13 +2955,33 @@ function openNotionImport() {
   _wizardMode = 'notion';
   _generatedTrip = null;
   document.getElementById('wizard-prompt').value = '';
+  document.getElementById('notion-zip-info').style.display = 'none';
+  document.getElementById('wizard-zip-btn').style.display = 'inline-block';
   document.getElementById('wizard-title').textContent = '노션에서 가져오기';
-  document.getElementById('wizard-input-label').textContent = '노션 페이지 내용 (복사·붙여넣기)';
-  document.getElementById('wizard-prompt').placeholder = '노션 여행 페이지를 열고 → Ctrl+A 전체 선택 → 복사 → 여기 붙여넣기. 데이터베이스 표·날짜·메모 다 포함해서 통째로.';
-  document.getElementById('wizard-input-hint').innerHTML = '⚠️ <b>읽기 전용</b>: 노션에 절대 다시 쓰지 않습니다.<br>AI가 텍스트를 분석해서 트립으로 변환. 페이지가 길면 일정·예산 부분만 잘라서 붙여도 됩니다.';
+  document.getElementById('wizard-input-label').textContent = '노션 내용 (ZIP 추천)';
+  document.getElementById('wizard-prompt').placeholder = '노션에서 ⋯ → 내보내기 → "Markdown & CSV" 다운로드한 ZIP을 위 "📁 노션 ZIP 불러오기" 버튼으로 선택하세요.\n\n또는 페이지 내용을 직접 여기에 붙여넣어도 됩니다.';
+  document.getElementById('wizard-input-hint').innerHTML = '⚠️ <b>읽기 전용</b>: 노션에 절대 다시 쓰지 않습니다. ZIP 안의 .md/.csv를 자동 추출 → AI가 트립으로 변환 → 저장 전 미리보기 확인.';
   document.getElementById('generate-btn').innerHTML = '🪄 AI 변환 시작';
   showWizardStep('input');
   showScreen('new');
+}
+
+async function onNotionZipSelected(event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+  if (!window.NotionZip?.enabled) { showToast('ZIP 파서 로드 실패. 페이지를 새로고침해주세요.'); return; }
+  const info = document.getElementById('notion-zip-info');
+  info.style.display = 'block';
+  info.textContent = `📦 ${file.name} 분석 중...`;
+  try {
+    const result = await NotionZip.parseFile(file);
+    document.getElementById('wizard-prompt').value = result.combinedText;
+    info.innerHTML = `✅ ${file.name} 분석 완료 — ${result.includedCount}/${result.fileCount}개 파일${result.truncated ? ' (길이 제한으로 일부 생략)' : ''}. 아래 "AI 변환 시작" 누르면 트립 생성.`;
+  } catch (err) {
+    info.style.color = '#ff8a8a';
+    info.textContent = '❌ 파싱 실패: ' + (err.message || err);
+  }
+  event.target.value = '';
 }
 
 function cancelNewTrip() {
@@ -2714,6 +3061,22 @@ async function saveGeneratedTrip() {
   showScreen('list');
 }
 
+async function copyGuideLink() {
+  const url = 'https://kkyyuu99.github.io/travel-app/';
+  try {
+    if (navigator.share) {
+      await navigator.share({ title: 'Travel 앱', text: '여행 일정 같이 보는 앱이에요. 이 링크에서 가입하세요:', url });
+    } else if (navigator.clipboard) {
+      await navigator.clipboard.writeText(url);
+      showToast('📋 링크 복사됨');
+    } else {
+      prompt('복사하세요:', url);
+    }
+  } catch (e) {
+    if (e.name !== 'AbortError') showToast('복사 실패');
+  }
+}
+
 /* ── 트립 메뉴 (메인 detail 화면 3-dots) ─────────── */
 function toggleTripMenu(event) {
   event && event.stopPropagation();
@@ -2747,6 +3110,72 @@ async function renameTrip() {
   document.getElementById('trip-title').textContent = `${TRIP.emoji || ''} ${TRIP.name}`.trim();
   showToast('✏️ 이름 변경됨');
   _bgPushTrip(TRIP);
+}
+
+/* ── 구글 내지도 임베드 ──────────────────────────── */
+function normalizeMyMapsUrl(url) {
+  if (!url) return null;
+  url = url.trim();
+  // 이미 embed URL이면 그대로
+  if (url.includes('/maps/d/embed')) return url;
+  // 일반 view URL이면 embed로 변환: /maps/d/viewer?mid=... → /maps/d/embed?mid=...
+  const m = url.match(/[?&]mid=([^&]+)/);
+  if (m) return `https://www.google.com/maps/d/embed?mid=${m[1]}`;
+  // 형식 모르면 null
+  return null;
+}
+
+function renderMyMapsForTrip() {
+  const cont = document.getElementById('mymaps-container');
+  if (!cont) return;
+  if (!TRIP?.my_maps_url) {
+    cont.style.display = 'none';
+    cont.innerHTML = '';
+    return;
+  }
+  const embed = normalizeMyMapsUrl(TRIP.my_maps_url);
+  if (!embed) { cont.style.display = 'none'; return; }
+  cont.style.display = 'block';
+  cont.innerHTML = `
+    <div class="my-maps-wrap">
+      <iframe src="${embed}" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>
+    </div>
+  `;
+}
+
+function openMyMapsModal() {
+  document.getElementById('trip-menu').classList.remove('open');
+  if (!TRIP) return;
+  document.getElementById('mymaps-url').value = TRIP.my_maps_url || '';
+  document.getElementById('mymaps-modal').classList.add('open');
+}
+
+function closeMyMapsModal() {
+  document.getElementById('mymaps-modal').classList.remove('open');
+}
+
+async function saveMyMapsUrl() {
+  const raw = document.getElementById('mymaps-url').value.trim();
+  const embed = normalizeMyMapsUrl(raw);
+  if (raw && !embed) {
+    showToast('URL 형식을 확인하세요. My Maps 공유 또는 임베드 URL이어야 합니다.');
+    return;
+  }
+  TRIP.my_maps_url = raw || null;
+  await TripDB.trips.put(TRIP);
+  if (_currentUser && TRIP.cloud_id) {
+    try {
+      await Cloud.client.from('trips').update({ my_maps_url: TRIP.my_maps_url }).eq('id', TRIP.cloud_id);
+    } catch (e) { console.warn('내지도 URL 동기화 실패:', e.message); }
+  }
+  renderMyMapsForTrip();
+  closeMyMapsModal();
+  showToast(raw ? '🗺️ 내지도 연결됨' : '🗺️ 내지도 연결 해제됨');
+}
+
+async function clearMyMapsUrl() {
+  document.getElementById('mymaps-url').value = '';
+  await saveMyMapsUrl();
 }
 
 /* ── 공유 ─────────────────────────────────────────── */
