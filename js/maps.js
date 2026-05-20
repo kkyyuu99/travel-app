@@ -124,11 +124,14 @@
       return { markerCount: 0, engine: 'leaflet' };
     }
 
+    // 기존 Leaflet 인스턴스 정리 (재렌더 대응)
+    if (container._lmap) { try { container._lmap.remove(); } catch {} container._lmap = null; }
     container.innerHTML = '';
     container.style.background = '#fff'; // OSM 타일은 밝은 배경에서 잘 보임
 
     const center = [markers[0].lat, markers[0].lon];
     const map = L.map(container, { zoomControl: true, attributionControl: true }).setView(center, 12);
+    container._lmap = map;
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19, attribution: '© OpenStreetMap',
     }).addTo(map);
@@ -308,10 +311,111 @@
     return { markerCount: markers.length, geocodedNow, engine: 'google' };
   }
 
+  // ── Day별 미니맵 (Leaflet, 작은 인라인) ────────────
+  // 사용자가 지정한 dayObj의 items만 핀 + 그날 폴리라인.
+  function renderDayMiniMap(container, dayObj) {
+    if (!window.L) return false;
+    const items = (dayObj.items || []).filter(it => typeof it.lat === 'number' && typeof it.lon === 'number');
+    if (items.length === 0) return false;
+
+    // 기존 인스턴스 정리
+    if (container._lmap) { container._lmap.remove(); container._lmap = null; }
+    container.innerHTML = '';
+    container.style.background = '#fff';
+
+    const map = L.map(container, {
+      zoomControl: false, attributionControl: false, dragging: true, scrollWheelZoom: false,
+      doubleClickZoom: false, touchZoom: true, keyboard: false,
+    });
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18 }).addTo(map);
+
+    const color = dayObj.color || '#4fc3f7';
+    items.forEach((it, i) => {
+      L.circleMarker([it.lat, it.lon], {
+        radius: 7, fillColor: color, color: 'white', weight: 2, fillOpacity: 1,
+      }).addTo(map).bindTooltip(`${i+1}. ${it.title}`, { direction: 'top' });
+    });
+    if (items.length >= 2) {
+      L.polyline(items.map(it => [it.lat, it.lon]), { color, weight: 3, opacity: 0.7 }).addTo(map);
+    }
+    map.fitBounds(L.latLngBounds(items.map(it => [it.lat, it.lon])), { padding: [20, 20] });
+
+    container._lmap = map;
+    // 컨테이너 사이즈 변경 시 invalidate (탭 전환 등)
+    setTimeout(() => map.invalidateSize(), 100);
+    return true;
+  }
+
+  // ── 오프라인 OSM 타일 사전 캐싱 ────────────────────
+  // bbox×zoom 범위의 타일 URL들을 fetch → SW가 자동 캐싱.
+  // 진행상황은 onProgress(done, total) 콜백으로.
+  async function prefetchOfflineTiles(trip, opts = {}) {
+    const items = (trip.days || []).flatMap(d => d.items || [])
+      .filter(it => typeof it.lat === 'number' && typeof it.lon === 'number');
+    if (items.length === 0) throw new Error('좌표 있는 일정이 없습니다');
+
+    const minLat = Math.min(...items.map(it => it.lat));
+    const maxLat = Math.max(...items.map(it => it.lat));
+    const minLon = Math.min(...items.map(it => it.lon));
+    const maxLon = Math.max(...items.map(it => it.lon));
+    const zooms = opts.zooms || [10, 11, 12, 13];
+    const onProgress = opts.onProgress || (() => {});
+
+    // 위경도 → 타일 좌표
+    function deg2tile(lat, lon, z) {
+      const n = 2 ** z;
+      const x = Math.floor((lon + 180) / 360 * n);
+      const lat_rad = lat * Math.PI / 180;
+      const y = Math.floor((1 - Math.log(Math.tan(lat_rad) + 1 / Math.cos(lat_rad)) / Math.PI) / 2 * n);
+      return { x, y };
+    }
+
+    const urls = [];
+    for (const z of zooms) {
+      const a = deg2tile(maxLat, minLon, z);
+      const b = deg2tile(minLat, maxLon, z);
+      const x0 = Math.min(a.x, b.x), x1 = Math.max(a.x, b.x);
+      const y0 = Math.min(a.y, b.y), y1 = Math.max(a.y, b.y);
+      for (let x = x0; x <= x1; x++) {
+        for (let y = y0; y <= y1; y++) {
+          // OSM 부하 분산: a/b/c 서브도메인 순환
+          const sub = 'abc'[(x + y) % 3];
+          urls.push(`https://${sub}.tile.openstreetmap.org/${z}/${x}/${y}.png`);
+        }
+      }
+    }
+
+    onProgress(0, urls.length);
+    let done = 0;
+    let aborted = false;
+    const controller = { abort: () => { aborted = true; } };
+
+    // 동시 8개 fetch (OSM 부하 정책 — 분당 ~1500건 제한 안 넘기게)
+    const concurrency = 6;
+    async function worker(slice) {
+      for (const url of slice) {
+        if (aborted) return;
+        try { await fetch(url, { cache: 'force-cache' }); }
+        catch {}
+        done++;
+        onProgress(done, urls.length);
+        // 작은 딜레이로 rate-limit 회피
+        if (done % 30 === 0) await new Promise(r => setTimeout(r, 100));
+      }
+    }
+    const slices = Array.from({ length: concurrency }, (_, i) =>
+      urls.filter((_, j) => j % concurrency === i)
+    );
+    const promise = Promise.all(slices.map(worker)).then(() => ({ aborted, total: urls.length, done }));
+    return { promise, controller, total: urls.length };
+  }
+
   window.MapsKit = {
     loadGoogleMaps,
     getApiKey,
     geocode,
     renderTripMap,
+    renderDayMiniMap,
+    prefetchOfflineTiles,
   };
 })();
