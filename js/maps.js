@@ -90,15 +90,99 @@
     });
   }
 
-  // 트립 전체 지도 렌더
-  // container: HTMLElement
-  // trip: { days: [{day, color, items: [{title, map, lat, lon}]}] }
+  // 좌표 있는 마커만 수집 (지오코딩 없이)
+  function collectMarkers(trip) {
+    const markers = [];
+    for (const day of (trip.days || [])) {
+      for (const item of (day.items || [])) {
+        if (typeof item.lat === 'number' && typeof item.lon === 'number') {
+          markers.push({
+            lat: item.lat, lon: item.lon,
+            title: item.title, day: day.day,
+            color: day.color || '#4fc3f7',
+            icon: item.icon || '📍', sub: item.sub || '', time: item.time || '',
+          });
+        }
+      }
+    }
+    return markers;
+  }
+
+  // Leaflet 폴백 — Maps 키 없거나 비빌링 상황. lat/lon이 이미 있는 항목만 표시.
+  function renderTripMapLeaflet(container, trip) {
+    if (!window.L) {
+      container.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;padding:24px;text-align:center;color:rgba(255,255,255,0.6)">Leaflet 라이브러리 로드 실패. 페이지 새로고침.</div>`;
+      return { markerCount: 0, engine: 'leaflet' };
+    }
+    const markers = collectMarkers(trip);
+    if (markers.length === 0) {
+      container.innerHTML = `
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:24px;text-align:center;color:rgba(255,255,255,0.6);gap:8px">
+          <div style="font-size:36px">🗺️</div>
+          <div style="font-size:13px">지도에 표시할 좌표가 없어요.<br>구글맵 API 키를 설정하면 자동 지오코딩 가능, 또는 일정을 다시 AI로 생성하면 좌표가 함께 들어옵니다.</div>
+        </div>`;
+      return { markerCount: 0, engine: 'leaflet' };
+    }
+
+    container.innerHTML = '';
+    container.style.background = '#fff'; // OSM 타일은 밝은 배경에서 잘 보임
+
+    const center = [markers[0].lat, markers[0].lon];
+    const map = L.map(container, { zoomControl: true, attributionControl: true }).setView(center, 12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19, attribution: '© OpenStreetMap',
+    }).addTo(map);
+
+    // Day별 폴리라인
+    const byDay = new Map();
+    markers.forEach(m => {
+      if (!byDay.has(m.day)) byDay.set(m.day, []);
+      byDay.get(m.day).push(m);
+    });
+    for (const [day, list] of byDay) {
+      const color = list[0].color;
+      if (list.length >= 2) {
+        L.polyline(list.map(m => [m.lat, m.lon]), {
+          color, weight: 3, opacity: 0.6,
+        }).addTo(map);
+      }
+    }
+
+    // 마커 (color circle marker + popup)
+    markers.forEach(m => {
+      const cm = L.circleMarker([m.lat, m.lon], {
+        radius: 9, fillColor: m.color, color: 'white', weight: 2, fillOpacity: 1,
+      }).addTo(map);
+      cm.bindPopup(`
+        <div style="font-family:sans-serif;max-width:200px;color:#222">
+          <div style="font-size:11px;color:#888;margin-bottom:2px">Day ${m.day} · ${m.time}</div>
+          <div style="font-weight:700;font-size:13px">${m.icon} ${m.title}</div>
+          ${m.sub ? `<div style="font-size:11px;color:#666;margin-top:2px">${m.sub}</div>` : ''}
+        </div>
+      `);
+    });
+
+    const bounds = L.latLngBounds(markers.map(m => [m.lat, m.lon]));
+    map.fitBounds(bounds, { padding: [30, 30] });
+
+    return { markerCount: markers.length, engine: 'leaflet' };
+  }
+
+  // 트립 전체 지도 렌더 — 키 있으면 Google, 없으면 Leaflet 폴백
   async function renderTripMap(container, trip, opts = {}) {
     const apiKey = await getApiKey();
-    if (!apiKey) throw new Error('API 키가 없습니다. 설정에서 등록하세요.');
-    await loadGoogleMaps(apiKey);
+    if (!apiKey) {
+      // 키 없으면 Leaflet으로 (좌표 있는 항목만)
+      return renderTripMapLeaflet(container, trip);
+    }
+    try {
+      await loadGoogleMaps(apiKey);
+    } catch (e) {
+      // 스크립트 로드 실패 → Leaflet 폴백
+      return renderTripMapLeaflet(container, trip);
+    }
 
-    container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:rgba(255,255,255,0.5)">지오코딩 중...</div>';
+    container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:rgba(255,255,255,0.5)">지도 로딩 중...</div>';
 
     // 1) 모든 마커 좌표 수집 (캐시 우선, 없으면 지오코딩)
     const markers = [];
@@ -177,7 +261,6 @@
 
     const info = new google.maps.InfoWindow();
     markers.forEach((m, idx) => {
-      // 핀: 색상 커스텀 (Google Maps기본 svg pin URL)
       const pin = new google.maps.Marker({
         position: { lat: m.lat, lng: m.lon },
         map,
@@ -204,7 +287,25 @@
       });
     });
 
-    return { markerCount: markers.length, geocodedNow };
+    // Day별 폴리라인 (동선 시각화)
+    const byDay = new Map();
+    markers.forEach(m => {
+      if (!byDay.has(m.day)) byDay.set(m.day, []);
+      byDay.get(m.day).push(m);
+    });
+    for (const [day, list] of byDay) {
+      if (list.length < 2) continue;
+      new google.maps.Polyline({
+        path: list.map(m => ({ lat: m.lat, lng: m.lon })),
+        geodesic: true,
+        strokeColor: list[0].color,
+        strokeWeight: 3,
+        strokeOpacity: 0.65,
+        map,
+      });
+    }
+
+    return { markerCount: markers.length, geocodedNow, engine: 'google' };
   }
 
   window.MapsKit = {

@@ -76,6 +76,8 @@
       tags: Array.isArray(it.tags) ? it.tags : [],
       visit_status: it.visit_status || '방문예정',
       rating: it.rating || null,
+      lat: typeof it.lat === 'number' ? it.lat : null,
+      lon: typeof it.lon === 'number' ? it.lon : null,
       metadata: { local_id: it.id },
     };
   }
@@ -154,6 +156,8 @@
           priority: p.priority || null,
           tags: p.tags || [],
           visit_status: p.visit_status || '방문예정',
+          lat: p.lat != null ? Number(p.lat) : undefined,
+          lon: p.lon != null ? Number(p.lon) : undefined,
         })),
         routes: (routesByDay[d.id] || []).map(r => ({
           cloud_id: r.id,

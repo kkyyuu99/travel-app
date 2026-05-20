@@ -1,6 +1,6 @@
 // Travel PWA — Service Worker
 // 캐시 버전을 올리면 모든 사용자가 새 번들을 받습니다.
-const CACHE_VERSION = 'v13';
+const CACHE_VERSION = 'v14';
 const STATIC_CACHE = `travel-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `travel-runtime-${CACHE_VERSION}`;
 
@@ -36,6 +36,10 @@ const NETWORK_FIRST_HOSTS = [
   'ygusohacqkwzrwwlaefc.supabase.co',    // Supabase REST/Auth
   'maps.googleapis.com',                 // Google Maps JS API + Geocoding
   'maps.gstatic.com',                    // Google Maps assets
+  'unpkg.com',                           // Leaflet CDN
+  'a.tile.openstreetmap.org',            // OSM tiles
+  'b.tile.openstreetmap.org',
+  'c.tile.openstreetmap.org',
 ];
 
 self.addEventListener('install', (event) => {

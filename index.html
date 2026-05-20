@@ -1397,14 +1397,16 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-<script src="js/supabase-config.js?v=13"></script>
-<script src="js/cloud.js?v=13"></script>
-<script src="js/seed.js?v=13"></script>
-<script src="js/db.js?v=13"></script>
-<script src="js/ai.js?v=13"></script>
-<script src="js/sync.js?v=13"></script>
-<script src="js/notion-zip.js?v=13"></script>
-<script src="js/maps.js?v=13"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="js/supabase-config.js?v=14"></script>
+<script src="js/cloud.js?v=14"></script>
+<script src="js/seed.js?v=14"></script>
+<script src="js/db.js?v=14"></script>
+<script src="js/ai.js?v=14"></script>
+<script src="js/sync.js?v=14"></script>
+<script src="js/notion-zip.js?v=14"></script>
+<script src="js/maps.js?v=14"></script>
 <script>
 /* ── DATA (현재 열린 여행에서 동적으로 채워짐) ── */
 let TRIP = null;          // 현재 열린 여행 객체 (IndexedDB에서)
@@ -3613,14 +3615,6 @@ async function openTripMapView() {
   document.getElementById('trip-menu').classList.remove('open');
   if (!TRIP) return;
 
-  const apiKey = await MapsKit.getApiKey();
-  if (!apiKey) {
-    showToast('설정에서 구글맵 API 키를 먼저 등록하세요');
-    showScreen('settings');
-    setTimeout(() => document.getElementById('key-gmaps')?.focus(), 200);
-    return;
-  }
-
   document.getElementById('trip-map-title').textContent = `${TRIP.emoji || '✈️'} ${TRIP.name} — 전체 지도`;
   const info = document.getElementById('trip-map-info');
   info.textContent = '지도 로딩 중...';
@@ -3630,11 +3624,19 @@ async function openTripMapView() {
   canvas.innerHTML = '';
 
   try {
+    const apiKey = await MapsKit.getApiKey();
     const result = await MapsKit.renderTripMap(canvas, TRIP);
     const itemTotal = (TRIP.days || []).reduce((s, d) => s + (d.items || []).length, 0);
-    info.innerHTML = `<b>${result.markerCount}</b>개 마커 / 전체 ${itemTotal}개 일정${result.geocodedNow ? ` · 새로 ${result.geocodedNow}개 위치 검색됨` : ''}`;
+    const engineLabel = result.engine === 'leaflet'
+      ? '🌍 OpenStreetMap (키 없음 / 좌표 있는 항목만)'
+      : '🗺️ Google Maps';
+    let extra = '';
+    if (result.engine === 'leaflet' && !apiKey) {
+      extra = ' · <a href="#" onclick="closeTripMapView();showScreen(\'settings\');setTimeout(()=>document.getElementById(\'key-gmaps\')?.focus(),200);return false" style="color:#4fc3f7">Google Maps 키 등록 →</a>';
+    }
+    info.innerHTML = `<b>${result.markerCount}</b>개 마커 / 전체 ${itemTotal}개 일정 · ${engineLabel}${result.geocodedNow ? ` · 새로 ${result.geocodedNow}개 위치 검색` : ''}${extra}`;
   } catch (e) {
-    canvas.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#ff8a8a;font-size:13px;padding:24px;text-align:center">지도 로드 실패: ${e.message}<br><br>키 제한·할당량 설정을 확인하세요.</div>`;
+    canvas.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#ff8a8a;font-size:13px;padding:24px;text-align:center">지도 로드 실패: ${e.message}</div>`;
     info.textContent = '';
   }
 }
