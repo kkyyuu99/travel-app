@@ -978,6 +978,32 @@
       <input type="file" id="import-file" accept="application/json,.json" style="display:none" onchange="onImportFile(event)">
     </div>
 
+    <!-- 운영자 전용 (kkyyuu99@gmail.com만 보임) -->
+    <div id="operator-section" style="display:none">
+      <div class="section-title">🔒 운영자 — 중앙 API 키</div>
+      <div style="font-size:11px; color:var(--muted); line-height:1.6; margin-bottom:10px">
+        여기에 키를 설정하면 <b>모든 로그인 사용자</b>가 이 키로 AI·지도 기능을 쓸 수 있어요. 개인 키 설정한 사용자는 본인 키 우선.<br>
+        ⚠️ HTTP 리퍼러 제한 + 할당량 캡 필수.
+      </div>
+      <div class="field">
+        <span class="field-label">중앙 Gemini 키</span>
+        <input type="password" class="field-input" id="op-key-gemini" placeholder="AIza..." autocomplete="off">
+      </div>
+      <div class="field">
+        <span class="field-label">중앙 Google Maps 키</span>
+        <input type="password" class="field-input" id="op-key-gmaps" placeholder="AIza..." autocomplete="off">
+      </div>
+      <div class="field">
+        <span class="field-label">중앙 Claude 키 (선택)</span>
+        <input type="password" class="field-input" id="op-key-claude" placeholder="sk-ant-..." autocomplete="off">
+      </div>
+      <div class="field">
+        <span class="field-label">중앙 OpenAI 키 (선택)</span>
+        <input type="password" class="field-input" id="op-key-openai" placeholder="sk-..." autocomplete="off">
+      </div>
+      <button class="primary-btn" onclick="saveOperatorKeys()">중앙 키 저장</button>
+    </div>
+
     <!-- 정보 -->
     <div>
       <div class="section-title">도움말 & 정보</div>
@@ -1371,14 +1397,14 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-<script src="js/supabase-config.js?v=12"></script>
-<script src="js/cloud.js?v=12"></script>
-<script src="js/seed.js?v=12"></script>
-<script src="js/db.js?v=12"></script>
-<script src="js/ai.js?v=12"></script>
-<script src="js/sync.js?v=12"></script>
-<script src="js/notion-zip.js?v=12"></script>
-<script src="js/maps.js?v=12"></script>
+<script src="js/supabase-config.js?v=13"></script>
+<script src="js/cloud.js?v=13"></script>
+<script src="js/seed.js?v=13"></script>
+<script src="js/db.js?v=13"></script>
+<script src="js/ai.js?v=13"></script>
+<script src="js/sync.js?v=13"></script>
+<script src="js/notion-zip.js?v=13"></script>
+<script src="js/maps.js?v=13"></script>
 <script>
 /* ── DATA (현재 열린 여행에서 동적으로 채워짐) ── */
 let TRIP = null;          // 현재 열린 여행 객체 (IndexedDB에서)
@@ -2964,7 +2990,18 @@ async function refreshAuthUI() {
 
   const status = document.getElementById('auth-status');
   if (_currentUser) {
-    status.innerHTML = `<span class="auth-badge online">● 동기화 중 · ${_currentUser.email}</span>`;
+    // 중앙 키 사용 여부 표시 (개인 키 없고 중앙 키 있을 때만)
+    let centralBadge = '';
+    try {
+      const hasPersonalGem = await TripDB.settings.get('apiKey.gemini', '');
+      const hasPersonalMaps = await TripDB.settings.get('googleMapsApiKey', '');
+      const centralGem = !hasPersonalGem ? await Cloud.appConfig.get('apiKey.gemini') : null;
+      const centralMaps = !hasPersonalMaps ? await Cloud.appConfig.get('apiKey.googleMaps') : null;
+      if (centralGem || centralMaps) {
+        centralBadge = ` <span style="opacity:0.7;font-size:9px">· 🔑 운영자 키</span>`;
+      }
+    } catch {}
+    status.innerHTML = `<span class="auth-badge online">● 동기화 중 · ${_currentUser.email}${centralBadge}</span>`;
   } else {
     status.innerHTML = `<span class="auth-badge local" onclick="openSignIn()" style="cursor:pointer">⚪ 로컬 모드 · 로그인 →</span>`;
   }
@@ -3192,11 +3229,62 @@ async function signOutNow() {
   showToast('👋 로그아웃됨');
 }
 
+/* ── 운영자 키 관리 ──────────────────────────────── */
+async function loadOperatorSection() {
+  const sec = document.getElementById('operator-section');
+  if (!sec) return;
+  if (!_currentUser || !Cloud?.enabled) { sec.style.display = 'none'; return; }
+  let isOp = false;
+  try { isOp = await Cloud.appConfig.isOperator(); } catch {}
+  if (!isOp) { sec.style.display = 'none'; return; }
+  sec.style.display = 'block';
+  // 현재 중앙 키 로드 (placeholder만, 값은 비공개 — 그대로 두기보다 비워서 변경 시에만 저장)
+  const [g, gm, c, o] = await Promise.all([
+    Cloud.appConfig.get('apiKey.gemini'),
+    Cloud.appConfig.get('apiKey.googleMaps'),
+    Cloud.appConfig.get('apiKey.claude'),
+    Cloud.appConfig.get('apiKey.openai'),
+  ]);
+  // 입력칸을 직접 노출하지 않고, 설정된 여부만 표시
+  const setOrEmpty = (id, val) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.value = '';
+    el.placeholder = val ? '✅ 설정됨 — 새 값 입력하면 덮어씀' : '(비어있음) AIza...';
+  };
+  setOrEmpty('op-key-gemini', g);
+  setOrEmpty('op-key-gmaps', gm);
+  setOrEmpty('op-key-claude', c);
+  setOrEmpty('op-key-openai', o);
+}
+
+async function saveOperatorKeys() {
+  if (!Cloud?.enabled || !_currentUser) return;
+  const v = (id) => document.getElementById(id)?.value?.trim();
+  try {
+    const updates = [];
+    if (v('op-key-gemini')) updates.push(['apiKey.gemini', v('op-key-gemini')]);
+    if (v('op-key-gmaps')) updates.push(['apiKey.googleMaps', v('op-key-gmaps')]);
+    if (v('op-key-claude')) updates.push(['apiKey.claude', v('op-key-claude')]);
+    if (v('op-key-openai')) updates.push(['apiKey.openai', v('op-key-openai')]);
+    if (updates.length === 0) { showToast('변경할 값이 없어요'); return; }
+    for (const [k, val] of updates) {
+      await Cloud.appConfig.set(k, val);
+    }
+    Cloud.appConfig.clearCache();
+    showToast(`✅ 중앙 키 ${updates.length}개 업데이트됨`);
+    await loadOperatorSection();
+  } catch (e) {
+    showToast('저장 실패: ' + (e.message || e));
+  }
+}
+
 /* ── 설정 화면 ────────────────────────────────────── */
 async function openSettings() {
   renderAccountCard();
   if (_currentUser) loadProfileForEdit();
   else document.getElementById('profile-edit').style.display = 'none';
+  loadOperatorSection();
 
   // 테마
   const theme = await TripDB.settings.get('theme', 'system');

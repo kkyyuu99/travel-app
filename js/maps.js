@@ -37,7 +37,13 @@
 
   async function getApiKey() {
     if (!window.TripDB) return null;
-    return await TripDB.settings.get('googleMapsApiKey', null);
+    // 1순위: 사용자 개인 키 / 2순위: 운영자 중앙 키 (Supabase app_config)
+    const personal = await TripDB.settings.get('googleMapsApiKey', null);
+    if (personal) return personal;
+    if (window.Cloud?.enabled && window.Cloud.appConfig) {
+      try { return await Cloud.appConfig.get('apiKey.googleMaps'); } catch { return null; }
+    }
+    return null;
   }
 
   // 지오코딩 — 장소명 → 좌표

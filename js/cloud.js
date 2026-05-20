@@ -381,6 +381,41 @@
     },
   };
 
+  // ── App config (운영자 중앙 키) ──────────────────
+  const _appConfigCache = new Map();
+  const appConfig = {
+    async get(key) {
+      if (_appConfigCache.has(key)) return _appConfigCache.get(key);
+      try {
+        const { data, error } = await client.from('app_config').select('value').eq('key', key).maybeSingle();
+        if (error) return null;
+        const v = data?.value || null;
+        _appConfigCache.set(key, v);
+        return v;
+      } catch { return null; }
+    },
+    async set(key, value) {
+      // 운영자만 가능 — RLS가 차단함
+      const { error } = await client.from('app_config').upsert({ key, value, updated_by: (await auth.user())?.id });
+      if (error) throw error;
+      _appConfigCache.set(key, value);
+    },
+    async list() {
+      // 운영자 화면에서 전체 키 조회
+      const { data, error } = await client.from('app_config').select('*').order('key');
+      if (error) throw error;
+      return data || [];
+    },
+    async isOperator() {
+      try {
+        const { data, error } = await client.rpc('is_operator');
+        if (error) return false;
+        return !!data;
+      } catch { return false; }
+    },
+    clearCache() { _appConfigCache.clear(); },
+  };
+
   // ── Reservations (예약) ───────────────────────────
   const reservations = {
     async listByTrip(tripId) {
@@ -425,6 +460,7 @@
     storage,
     lodgings,
     reservations,
+    appConfig,
     ping,
   };
 })();

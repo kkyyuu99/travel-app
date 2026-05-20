@@ -228,9 +228,13 @@ JSON 외 다른 텍스트(설명·코드펜스 포함)는 절대 출력하지 �
 
   async function generateTrip(prompt, opts = {}) {
     const provider = opts.provider || (await TripDB.settings.get('aiProvider', 'gemini'));
-    const key = opts.apiKey || (await TripDB.settings.get(`apiKey.${provider}`));
+    // 1순위: 명시 옵션 / 2순위: 사용자 개인 키 / 3순위: 운영자 중앙 키 (Supabase app_config)
+    let key = opts.apiKey || (await TripDB.settings.get(`apiKey.${provider}`));
+    if (!key && window.Cloud?.enabled && window.Cloud.appConfig) {
+      try { key = await Cloud.appConfig.get(`apiKey.${provider}`); } catch {}
+    }
     if (!key) {
-      const e = new Error(`${provider.toUpperCase()} API 키가 없습니다. 설정에서 등록하세요.`);
+      const e = new Error(`${provider.toUpperCase()} API 키가 없습니다. 설정에서 등록하거나 운영자에게 문의하세요.`);
       e.code = 'NO_KEY';
       e.provider = provider;
       throw e;
