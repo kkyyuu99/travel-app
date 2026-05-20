@@ -107,15 +107,24 @@
   };
 
   // ── 초기 시드 ──────────────────────────────────
-  // 첫 실행 시 도쿄 데이터를 한 번만 넣음. 사용자가 지우면 다시 안 넣음.
+  // 첫 실행 시 한 번씩만 넣음. 사용자가 지우면 다시 안 넣음.
   async function seedIfFirstRun() {
-    const seeded = await settings.get('seeded.v1', false);
-    if (seeded) return false;
-    if (window.TOKYO_SEED) {
-      await trips.put({ ...window.TOKYO_SEED });
+    let added = 0;
+    if (!(await settings.get('seeded.v1', false))) {
+      if (window.TOKYO_SEED) {
+        await trips.put({ ...window.TOKYO_SEED });
+        added++;
+      }
+      await settings.set('seeded.v1', true);
     }
-    await settings.set('seeded.v1', true);
-    return true;
+    if (!(await settings.get('seeded.europe.v1', false))) {
+      if (window.EUROPE_SEED) {
+        await trips.put({ ...window.EUROPE_SEED });
+        added++;
+      }
+      await settings.set('seeded.europe.v1', true);
+    }
+    return added > 0;
   }
 
   async function init() {

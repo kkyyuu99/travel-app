@@ -1,6 +1,86 @@
 // 첫 실행 시 IndexedDB에 시드되는 기본 여행 데이터
 // 사용자가 삭제하면 다시 생성되지 않음 (settings.seeded 플래그로 관리)
 
+// ── 유럽 60일 진주혼식 여행 (2027) ── 노션에서 가져온 메타데이터
+// 일정은 60일 빈 day로 시작, AI나 노션 ZIP으로 채울 수 있음.
+window.EUROPE_SEED = (function () {
+  const COLORS = ['#ff6b9d','#f5c842','#4fc3f7','#81c784','#c084fc','#ff8a65'];
+  const dowLabel = ['일','월','화','수','목','금','토'];
+  const START = '2027-05-17';
+  const DAYS_COUNT = 60;
+  const startDate = new Date(START + 'T00:00:00');
+  const days = [];
+  for (let i = 0; i < DAYS_COUNT; i++) {
+    const d = new Date(startDate);
+    d.setDate(d.getDate() + i);
+    const iso = d.toISOString().slice(0, 10);
+    const label = `${d.getMonth() + 1}/${d.getDate()} (${dowLabel[d.getDay()]})`;
+    let theme = '미정 · AI로 채우기';
+    let desc = '';
+    let items = [];
+    let routes = [];
+    if (i === 0) {
+      theme = '파리 도착';
+      desc = '인천 → 파리 CDG 공항. 도착 후 호텔 체크인 + 가벼운 산책.';
+      items = [
+        { id:'eu-d1-1', time:'06:00', icon:'✈️', title:'인천 출발 (ICN → CDG)', sub:'대한항공/에어프랑스', desc:'장거리 비행. 기내식 + 휴식.', cost:'항공권 약 260만원 (왕복)', map:'인천국제공항 제2터미널', lat:37.4602, lon:126.4407 },
+        { id:'eu-d1-2', time:'15:00', icon:'🛬', title:'파리 CDG 도착', sub:'샤를 드 골 공항', desc:'입국 심사 후 RER B로 시내 이동. 약 45분.', cost:'RER 약 €11.5', tip:'장시간 비행 후 첫날은 무리하지 말기.', map:'Paris CDG Airport', lat:49.0097, lon:2.5479 },
+        { id:'eu-d1-3', time:'17:00', icon:'🏨', title:'호텔 체크인', sub:'파리 시내', desc:'미리 예약한 호텔. 짐 풀고 휴식.', map:'Paris hotel', lat:48.8566, lon:2.3522 },
+        { id:'eu-d1-4', time:'19:00', icon:'🥐', title:'동네 산책 + 가벼운 저녁', sub:'시차 적응', desc:'호텔 주변 카페·비스트로. 무리하지 말기.', cost:'€20~40' },
+      ];
+      routes = [
+        { from:'인천공항', to:'파리 CDG', mode:'plane', dur:'약 12시간 30분' },
+        { from:'파리 CDG', to:'파리 시내', mode:'train', dur:'RER B 45분' },
+        { from:'호텔', to:'주변 카페', mode:'walk', dur:'도보' },
+      ];
+    } else if (i === 1) {
+      theme = '파리 행사 1일차';
+      desc = '5월 18일 — 노션에 기록된 파리 행사.';
+      items = [
+        { id:'eu-d2-1', time:'09:00', icon:'🥐', title:'호텔 조식', sub:'프랑스식 아침', desc:'크루아상 + 카페오레.', cost:'€15~25' },
+        { id:'eu-d2-2', time:'10:30', icon:'📅', title:'파리 행사 참석', sub:'5/17~5/20 일정 중', desc:'노션 상세 페이지 참고. 일정 채우기 필요.', lat:48.8566, lon:2.3522 },
+      ];
+    } else if (i === 3) {
+      theme = '파리 행사 마지막날';
+      desc = '5월 20일 — 행사 종료 후 다음 도시로 이동 준비.';
+      items = [
+        { id:'eu-d4-1', time:'10:00', icon:'📅', title:'파리 행사 마무리', sub:'5/17~5/20 종료일', desc:'행사 종료. 짐 정리.', lat:48.8566, lon:2.3522 },
+      ];
+    }
+    days.push({ day: i + 1, date: iso, dateLabel: label, theme, color: COLORS[i % COLORS.length], desc, items, routes });
+  }
+  return {
+    id: 'europe-2027-60d',
+    emoji: '🇪🇺',
+    name: '유럽 60일 진주혼식 여행',
+    destination: '유럽 9개국 (파리 시작, 자동차 10,000km)',
+    countryCode: 'FR',
+    countryCodes: ['FR','ES','PT','IT','CH','AT','HU','CZ','GB'],
+    currency: 'EUR',
+    homeCurrency: 'KRW',
+    lat: 48.8566, lon: 2.3522,
+    timezone: 'Europe/Paris',
+    startDate: '2027-05-17',
+    endDate: '2027-07-15',
+    isSeed: true,
+    notion_page_id: '524c3011-8cdf-82fa-874f-01f47f715636',
+    createdAt: Date.parse('2026-05-20T00:00:00Z'),
+    updatedAt: Date.parse('2026-05-20T00:00:00Z'),
+    budget: {
+      items: [
+        { label: '항공권 (왕복 2인)', amount: 5200 },
+        { label: '자동차 리스 (60일)', amount: 6500 },
+        { label: '숙박 (60박)', amount: 9000 },
+        { label: '식비 (60일×2인)', amount: 7200 },
+        { label: '입장료·투어·기름값', amount: 4000 },
+        { label: '쇼핑·예비비', amount: 3000 },
+      ],
+      daily: {},
+    },
+    days,
+  };
+})();
+
 window.TOKYO_SEED = {
   id: 'tokyo-2026-05',
   emoji: '🗼',

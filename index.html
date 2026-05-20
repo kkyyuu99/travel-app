@@ -1004,6 +1004,7 @@
         <button class="secondary-btn" onclick="exportAll()">📤 모든 여행 내보내기 (JSON)</button>
         <button class="secondary-btn" onclick="importAll()">📥 JSON에서 가져오기</button>
         <button class="secondary-btn" onclick="reseedTokyo()">🗼 도쿄 시드 다시 추가</button>
+        <button class="secondary-btn" onclick="reseedEurope()">🇪🇺 유럽 60일 시드 다시 추가</button>
       </div>
       <input type="file" id="import-file" accept="application/json,.json" style="display:none" onchange="onImportFile(event)">
     </div>
@@ -1210,6 +1211,52 @@
     <div id="trip-map-info" style="font-size:11px;color:var(--muted);margin:6px 0;flex-shrink:0"></div>
     <div id="trip-map-day-chips" class="map-day-chips"></div>
     <div id="trip-map-canvas" style="flex:1;min-height:300px;border-radius:10px;overflow:hidden;border:1px solid var(--border);background:var(--surface2)"></div>
+  </div>
+</div>
+
+<!-- ── 항목 편집/추가 모달 ────────────────────────── -->
+<div class="edit-form-overlay" id="item-edit-overlay" onclick="if(event.target===this)closeItemEdit()">
+  <div class="edit-form">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div class="modal-title" id="item-edit-title">항목 편집</div>
+      <button class="icon-btn" onclick="closeItemEdit()" aria-label="닫기">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="expense-row-flex">
+      <div class="field" style="flex:0.4"><span class="field-label">아이콘</span>
+        <input class="field-input" id="ie-icon" placeholder="📍" maxlength="3"></div>
+      <div class="field" style="flex:0.6"><span class="field-label">시간</span>
+        <input class="field-input" id="ie-time" placeholder="09:00"></div>
+    </div>
+    <div class="field"><span class="field-label">제목</span>
+      <input class="field-input" id="ie-title"></div>
+    <div class="field"><span class="field-label">부제</span>
+      <input class="field-input" id="ie-sub"></div>
+    <div class="field"><span class="field-label">설명</span>
+      <textarea class="field-textarea" id="ie-desc" style="min-height:60px"></textarea></div>
+    <div class="field"><span class="field-label">비용 메모</span>
+      <input class="field-input" id="ie-cost" placeholder="예: 약 1,500엔"></div>
+    <div class="field"><span class="field-label">팁</span>
+      <input class="field-input" id="ie-tip"></div>
+    <div class="field"><span class="field-label">구글맵 검색어</span>
+      <input class="field-input" id="ie-map" placeholder="장소명 또는 주소"></div>
+    <div class="expense-row-flex">
+      <div class="field"><span class="field-label">위도 (lat)</span>
+        <input class="field-input" id="ie-lat" type="number" step="0.0001" placeholder="35.6580"></div>
+      <div class="field"><span class="field-label">경도 (lon)</span>
+        <input class="field-input" id="ie-lon" type="number" step="0.0001" placeholder="139.7016"></div>
+    </div>
+    <div class="field"><span class="field-label">하이라이트 (⭐)</span>
+      <select class="field-select" id="ie-highlight">
+        <option value="false">일반</option>
+        <option value="true">⭐ 하이라이트</option>
+      </select></div>
+    <div style="display:flex; gap:8px">
+      <button class="secondary-btn" onclick="closeItemEdit()">취소</button>
+      <button class="primary-btn" onclick="saveItemEdit()">저장</button>
+      <button class="danger-btn" id="ie-delete-btn" onclick="deleteItem()" style="display:none">삭제</button>
+    </div>
   </div>
 </div>
 
@@ -1457,14 +1504,14 @@
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-<script src="js/supabase-config.js?v=15"></script>
-<script src="js/cloud.js?v=15"></script>
-<script src="js/seed.js?v=15"></script>
-<script src="js/db.js?v=15"></script>
-<script src="js/ai.js?v=15"></script>
-<script src="js/sync.js?v=15"></script>
-<script src="js/notion-zip.js?v=15"></script>
-<script src="js/maps.js?v=15"></script>
+<script src="js/supabase-config.js?v=16"></script>
+<script src="js/cloud.js?v=16"></script>
+<script src="js/seed.js?v=16"></script>
+<script src="js/db.js?v=16"></script>
+<script src="js/ai.js?v=16"></script>
+<script src="js/sync.js?v=16"></script>
+<script src="js/notion-zip.js?v=16"></script>
+<script src="js/maps.js?v=16"></script>
 <script>
 /* ── DATA (현재 열린 여행에서 동적으로 채워짐) ── */
 let TRIP = null;          // 현재 열린 여행 객체 (IndexedDB에서)
@@ -1909,8 +1956,13 @@ function renderTimeline() {
                 ${item.sub ? `<div class="tl-sub">${item.sub}</div>` : ''}
                 <div class="tl-desc">${item.desc.split('\n')[0]}</div>
               </div>
-              <div class="check-btn ${checked?'checked':''}" onclick="event.stopPropagation();toggleCheck('${item.id}')">
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+              <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">
+                <div class="check-btn ${checked?'checked':''}" onclick="event.stopPropagation();toggleCheck('${item.id}')">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+                <button class="icon-btn" style="width:24px;height:24px;font-size:11px" onclick="event.stopPropagation();editItem('${item.id}')" aria-label="편집">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                </button>
               </div>
             </div>
           </div>
@@ -1960,6 +2012,14 @@ function renderTimeline() {
     }
   });
 
+  // Day 끝에 "항목 추가" 버튼 + 빈 Day일 경우 AI 채우기
+  const isSparseDay = (day.items || []).length === 0;
+  html += `
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="secondary-btn" style="flex:1" onclick="addItemToDay(${day.day})">+ 항목 추가</button>
+      ${isSparseDay ? `<button class="primary-btn" style="flex:1" onclick="aiFillDay(${day.day})">🪄 AI로 채우기</button>` : ''}
+    </div>
+  `;
   area.innerHTML = html;
   // Day 미니맵 렌더 (Leaflet 사용 — 키 불필요)
   if (dayHasCoords && window.MapsKit?.renderDayMiniMap) {
@@ -2067,6 +2127,163 @@ function deleteMemo(id) {
   btn.style.display = 'flex';
   document.getElementById('memoeditor-' + id).classList.remove('open');
   renderTimeline();
+}
+
+/* ── 항목 편집·추가·삭제 ────────────────────────── */
+let _itemEditCtx = null; // { mode:'edit'|'add', dayNum, itemId? }
+
+function editItem(itemId) {
+  const day = DAYS.find(d => (d.items || []).some(it => it.id === itemId));
+  if (!day) return;
+  const item = day.items.find(it => it.id === itemId);
+  if (!item) return;
+  _itemEditCtx = { mode: 'edit', dayNum: day.day, itemId };
+  document.getElementById('item-edit-title').textContent = `Day ${day.day} 항목 편집`;
+  document.getElementById('ie-icon').value = item.icon || '';
+  document.getElementById('ie-time').value = item.time || '';
+  document.getElementById('ie-title').value = item.title || '';
+  document.getElementById('ie-sub').value = item.sub || '';
+  document.getElementById('ie-desc').value = item.desc || '';
+  document.getElementById('ie-cost').value = item.cost || '';
+  document.getElementById('ie-tip').value = item.tip || '';
+  document.getElementById('ie-map').value = item.map || '';
+  document.getElementById('ie-lat').value = typeof item.lat === 'number' ? item.lat : '';
+  document.getElementById('ie-lon').value = typeof item.lon === 'number' ? item.lon : '';
+  document.getElementById('ie-highlight').value = item.highlight ? 'true' : 'false';
+  document.getElementById('ie-delete-btn').style.display = 'block';
+  document.getElementById('item-edit-overlay').classList.add('open');
+}
+
+function addItemToDay(dayNum) {
+  _itemEditCtx = { mode: 'add', dayNum };
+  document.getElementById('item-edit-title').textContent = `Day ${dayNum} 새 항목`;
+  ['ie-icon','ie-time','ie-title','ie-sub','ie-desc','ie-cost','ie-tip','ie-map','ie-lat','ie-lon'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  document.getElementById('ie-icon').value = '📍';
+  document.getElementById('ie-highlight').value = 'false';
+  document.getElementById('ie-delete-btn').style.display = 'none';
+  document.getElementById('item-edit-overlay').classList.add('open');
+}
+
+function closeItemEdit() {
+  document.getElementById('item-edit-overlay').classList.remove('open');
+  _itemEditCtx = null;
+}
+
+async function saveItemEdit() {
+  if (!_itemEditCtx) return;
+  const { mode, dayNum, itemId } = _itemEditCtx;
+  const day = DAYS.find(d => d.day === dayNum);
+  if (!day) return;
+  const v = (id) => document.getElementById(id)?.value?.trim() || '';
+  const vNum = (id) => {
+    const n = parseFloat(document.getElementById(id)?.value);
+    return isNaN(n) ? undefined : n;
+  };
+  const data = {
+    icon: v('ie-icon') || '📍',
+    time: v('ie-time'),
+    title: v('ie-title') || '제목 없음',
+    sub: v('ie-sub'),
+    desc: v('ie-desc'),
+    cost: v('ie-cost'),
+    tip: v('ie-tip'),
+    map: v('ie-map'),
+    highlight: document.getElementById('ie-highlight').value === 'true',
+  };
+  const lat = vNum('ie-lat'), lon = vNum('ie-lon');
+  if (lat !== undefined) data.lat = lat;
+  if (lon !== undefined) data.lon = lon;
+
+  if (mode === 'edit') {
+    const item = day.items.find(it => it.id === itemId);
+    Object.assign(item, data);
+  } else {
+    const nextNum = (day.items || []).length + 1;
+    day.items = day.items || [];
+    day.items.push({ id: `d${day.day}-${Date.now().toString(36)}`, ...data });
+  }
+
+  await TripDB.trips.put(TRIP);
+  _bgPushTrip(TRIP);
+  renderTimeline();
+  renderDesktopSidebar();
+  closeItemEdit();
+  showToast(mode === 'edit' ? '✅ 저장됨' : '✅ 항목 추가됨');
+}
+
+async function deleteItem() {
+  if (!_itemEditCtx || _itemEditCtx.mode !== 'edit') return;
+  if (!confirm('이 항목을 삭제할까요?')) return;
+  const { dayNum, itemId } = _itemEditCtx;
+  const day = DAYS.find(d => d.day === dayNum);
+  if (!day) return;
+  day.items = (day.items || []).filter(it => it.id !== itemId);
+  // 체크·메모도 정리
+  delete checkedItems[itemId];
+  delete memos[itemId];
+  await TripDB.trips.put(TRIP);
+  await TripDB.state.patch(TRIP.id, { checked: checkedItems, memos });
+  _bgPushTrip(TRIP);
+  renderTimeline();
+  renderDesktopSidebar();
+  closeItemEdit();
+  showToast('🗑️ 삭제됨');
+}
+
+/* ── AI로 빈 Day 채우기 ───────────────────────────── */
+async function aiFillDay(dayNum) {
+  if (!TRIP || !window.AI) return;
+  const day = DAYS.find(d => d.day === dayNum);
+  if (!day) return;
+  const allDates = DAYS.map(d => d.date);
+  const prompt = `이미 시작된 여행 "${TRIP.name}" (${TRIP.destination}, ${TRIP.startDate}~${TRIP.endDate})의 ${day.date} (${day.dateLabel}, Day ${dayNum})에 대한 일정만 만들어줘.
+
+기존 정보:
+- 목적지: ${TRIP.destination}
+- 전체 ${DAYS.length}일 중 Day ${dayNum}
+- 이날 테마: ${day.theme || '아직 미정'}
+- 이날 설명: ${day.desc || '없음'}
+- 다른 day들의 테마: ${DAYS.filter(d=>d.day!==dayNum && d.theme && d.theme!=='미정 · AI로 채우기').map(d => `Day${d.day}: ${d.theme}`).join(', ') || '없음'}
+
+이 Day 1개에 대해서만 items[] 배열을 5~8개 만들어줘. 각 item에 lat/lon 좌표 포함. JSON 형식:
+{
+  "theme": "이 Day의 테마",
+  "desc": "한 줄 설명",
+  "items": [{"id":"d${dayNum}-1","time":"09:00","icon":"이모지","title":"...","sub":"...","desc":"...","cost":"...","tip":"...","map":"검색어","lat":0,"lon":0,"highlight":false}],
+  "routes": [{"from":"...","to":"...","mode":"train|walk|plane","dur":"..."}]
+}
+순수 JSON만 출력.`;
+  showToast('🪄 AI 일정 생성 중 (10~30초)...');
+  try {
+    const result = await AI.generateTrip(prompt);
+    // result는 trip 전체 형식이지만, 우리는 day 하나만 필요. 첫 day의 items를 가져옴.
+    const generatedDay = result.days?.[0];
+    if (!generatedDay || !Array.isArray(generatedDay.items)) {
+      throw new Error('AI 응답이 올바르지 않음');
+    }
+    // 기존 day에 머지
+    day.theme = generatedDay.theme || day.theme;
+    day.desc = generatedDay.desc || day.desc;
+    day.items = generatedDay.items.map((it, i) => ({
+      ...it,
+      id: it.id || `d${dayNum}-${i + 1}`,
+    }));
+    day.routes = generatedDay.routes || [];
+    await TripDB.trips.put(TRIP);
+    _bgPushTrip(TRIP);
+    renderTimeline();
+    renderDesktopSidebar();
+    showToast(`✨ Day ${dayNum}에 ${day.items.length}개 항목 추가됨`);
+  } catch (err) {
+    if (err.code === 'NO_KEY') {
+      showToast('AI 키가 없어요 — 설정에서 등록하세요');
+    } else {
+      showToast('생성 실패: ' + (err.message || err));
+    }
+  }
 }
 
 /* ── 메모 내용 렌더링 (마크다운 이미지 → <img>) ─── */
@@ -3396,6 +3613,15 @@ async function reseedTokyo() {
   if (window.TOKYO_SEED) {
     await TripDB.trips.put({ ...window.TOKYO_SEED });
     showToast('🗼 도쿄 시드 다시 추가됨');
+    await renderTripList();
+  }
+}
+
+async function reseedEurope() {
+  if (!confirm('유럽 60일 여행 시드를 다시 추가할까요? 같은 ID가 있으면 덮어씁니다.')) return;
+  if (window.EUROPE_SEED) {
+    await TripDB.trips.put({ ...window.EUROPE_SEED });
+    showToast('🇪🇺 유럽 시드 다시 추가됨');
     await renderTripList();
   }
 }
