@@ -586,8 +586,12 @@
   .field-label { font-size: 12px; color: var(--muted); font-weight: 600; }
   .field-input, .field-textarea, .field-select {
     background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
-    padding: 11px 13px; color: var(--text); font-size: 14px; font-family: inherit;
+    padding: 11px 13px; color: var(--text); font-size: 16px; font-family: inherit;
     width: 100%; outline: none; transition: border-color 0.15s;
+  }
+  /* 데스크탑에선 살짝 작게 */
+  @media (min-width: 900px) {
+    .field-input, .field-textarea, .field-select { font-size: 14px; }
   }
   .field-input:focus, .field-textarea:focus, .field-select:focus { border-color: rgba(255,255,255,0.25); }
   .field-textarea { resize: vertical; min-height: 100px; line-height: 1.5; }
@@ -771,6 +775,21 @@
     content:''; position:absolute; inset:0; background: linear-gradient(180deg, rgba(0,0,0,0.55), var(--bg)); z-index: -1;
   }
 
+  /* ── 상단 알림 배너 (SW 업데이트·오프라인) ──────── */
+  .app-banner {
+    position: fixed; top: calc(var(--safe-top) + 8px); left: 50%;
+    transform: translateX(-50%); z-index: 90;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 99px;
+    padding: 8px 14px; font-size: 12px; font-weight: 600;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.3); backdrop-filter: blur(12px);
+    display: none; align-items: center; gap: 10px;
+    max-width: calc(100% - 24px);
+  }
+  .app-banner.show { display: inline-flex; animation: bannerSlide 0.3s ease; }
+  .app-banner.offline { background: rgba(255,138,138,0.15); border-color: rgba(255,138,138,0.4); color: #ff8a8a; }
+  .app-banner button { background: var(--day-color, #4fc3f7); color: #0d1117; border: none; border-radius: 99px; padding: 4px 10px; font-size: 11px; font-weight: 700; cursor: pointer; }
+  @keyframes bannerSlide { from { opacity: 0; transform: translate(-50%, -10px); } to { opacity: 1; transform: translate(-50%, 0); } }
+
   /* ── Now 인디케이터 ────────────────────────────── */
   .now-marker {
     display: flex; align-items: center; gap: 8px; padding: 6px 12px;
@@ -910,6 +929,8 @@
   .modal {
     background: var(--bg); border: 1px solid var(--border); border-radius: 18px;
     padding: 24px 20px; max-width: 360px; width: 100%; display: flex; flex-direction: column; gap: 14px;
+    max-height: 90vh; overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
   .modal-title { font-size: 18px; font-weight: 700; }
   .modal-sub { font-size: 12px; color: var(--muted); line-height: 1.5; }
@@ -1589,9 +1610,17 @@
   </div>
 </div>
 
-<div id="toast"></div>
+<div id="toast" role="status" aria-live="polite"></div>
 </div>
 <!-- /screen-detail -->
+
+<div class="app-banner" id="sw-update-banner">
+  <span>🔄 새 버전 사용 가능</span>
+  <button onclick="applySwUpdate()">새로고침</button>
+</div>
+<div class="app-banner offline" id="offline-banner">
+  <span>📡 오프라인 모드 — 로컬 데이터만</span>
+</div>
 
 <!-- ── 사인인 모달 (이메일+비밀번호 + 인증코드 가입) ── -->
 <div class="modal-overlay" id="signin-modal" onclick="if(event.target===this)closeSignIn()">
@@ -1692,14 +1721,14 @@
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-<script src="js/supabase-config.js?v=20"></script>
-<script src="js/cloud.js?v=20"></script>
-<script src="js/seed.js?v=20"></script>
-<script src="js/db.js?v=20"></script>
-<script src="js/ai.js?v=20"></script>
-<script src="js/sync.js?v=20"></script>
-<script src="js/notion-zip.js?v=20"></script>
-<script src="js/maps.js?v=20"></script>
+<script src="js/supabase-config.js?v=21"></script>
+<script src="js/cloud.js?v=21"></script>
+<script src="js/seed.js?v=21"></script>
+<script src="js/db.js?v=21"></script>
+<script src="js/ai.js?v=21"></script>
+<script src="js/sync.js?v=21"></script>
+<script src="js/notion-zip.js?v=21"></script>
+<script src="js/maps.js?v=21"></script>
 <script>
 /* ── DATA (현재 열린 여행에서 동적으로 채워짐) ── */
 let TRIP = null;          // 현재 열린 여행 객체 (IndexedDB에서)
@@ -2029,6 +2058,20 @@ function showToast(msg) {
   t.classList.add('show');
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+  // 햅틱 (지원 디바이스만)
+  if (navigator.vibrate) {
+    try { navigator.vibrate(10); } catch {}
+  }
+}
+
+// 체크 토글·완료 액션용 더 강한 햅틱
+function haptic(strength = 'light') {
+  if (!navigator.vibrate) return;
+  try {
+    if (strength === 'medium') navigator.vibrate([15, 30, 15]);
+    else if (strength === 'success') navigator.vibrate([20, 40, 20]);
+    else navigator.vibrate(10);
+  } catch {}
 }
 
 /* ── WEATHER ── */
@@ -2398,7 +2441,7 @@ function toggleCheck(id) {
   if (btn) btn.classList.toggle('checked', !!checkedItems[id]);
   renderTabs();
   renderProgress();
-  if (checkedItems[id]) showToast('✅ 완료!');
+  if (checkedItems[id]) { showToast('✅ 완료!'); haptic('success'); }
   renderDesktopSidebar();
 }
 
@@ -3383,7 +3426,15 @@ async function renderTripList() {
   const sub = document.getElementById('list-sub');
 
   if (trips.length === 0) {
-    cont.innerHTML = `<div class="trip-empty">아직 여행이 없어요.<br>아래 버튼으로 첫 여행을 만들어보세요.</div>`;
+    cont.innerHTML = `
+      <div class="trip-empty">
+        <div style="font-size:48px;margin-bottom:12px">🧳</div>
+        <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:6px">첫 여행을 만들어볼까요?</div>
+        <div style="font-size:12px;line-height:1.6">아래 두 가지 방법 중 골라보세요:<br>
+          ✨ <b>AI로 새 여행 만들기</b> — 자유 텍스트로 일정 생성<br>
+          📁 <b>노션에서 가져오기</b> — 노션 ZIP export 자동 변환
+        </div>
+      </div>`;
     if (sub) sub.textContent = '계획하고 떠나고 추억하기';
     return;
   }
@@ -4953,6 +5004,39 @@ async function onImportFile(event) {
   }
 }
 
+/* ── ESC 키로 열린 모달·시트 닫기 ────────────────── */
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  // 우선순위: photo-viewer → modal-overlay 중 가장 위 → sheet-overlay → screen-new
+  const photo = document.getElementById('photo-viewer');
+  if (photo?.classList.contains('open')) { closePhotoViewer(); return; }
+  const editForm = document.getElementById('item-edit-overlay');
+  if (editForm?.classList.contains('open')) { closeItemEdit(); return; }
+  const diaryEdit = document.getElementById('diary-edit-overlay');
+  if (diaryEdit?.classList.contains('open')) { closeDiaryEditor(); return; }
+  // 일반 modal-overlay 중 open인 마지막 것
+  const openModals = document.querySelectorAll('.modal-overlay.open, .edit-form-overlay.open');
+  if (openModals.length > 0) {
+    const last = openModals[openModals.length - 1];
+    last.classList.remove('open');
+    return;
+  }
+  // 일반 sheet
+  if (document.getElementById('main-sheet')?.classList.contains('open')) { closeSheet(); return; }
+  // 트립 메뉴
+  if (document.getElementById('trip-menu')?.classList.contains('open')) {
+    document.getElementById('trip-menu').classList.remove('open');
+    return;
+  }
+});
+
+// 모달 열렸을 때 body scroll lock (가벼운 버전 — MutationObserver로 .open 감지)
+const bodyScrollObserver = new MutationObserver(() => {
+  const anyOpen = !!document.querySelector('.modal-overlay.open, .edit-form-overlay.open, .sheet-overlay.open');
+  document.body.style.overflow = anyOpen ? 'hidden' : '';
+});
+bodyScrollObserver.observe(document.body, { attributes: true, subtree: true, attributeFilter: ['class'] });
+
 /* ── INIT ── */
 (async function bootstrap() {
   try {
@@ -4984,14 +5068,51 @@ async function onImportFile(event) {
   }
 })();
 
-// Service Worker 등록 — PWA 오프라인 동작용
+// Service Worker 등록 + 업데이트 감지
+let _newSwWaiting = null;
+function applySwUpdate() {
+  if (_newSwWaiting) {
+    _newSwWaiting.postMessage({ type: 'SKIP_WAITING' });
+  }
+  location.reload();
+}
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js').catch((err) => {
+  window.addEventListener('load', async () => {
+    try {
+      const reg = await navigator.serviceWorker.register('sw.js');
+      // 새 SW 발견 시 배너
+      reg.addEventListener('updatefound', () => {
+        const installing = reg.installing;
+        if (installing) {
+          installing.addEventListener('statechange', () => {
+            if (installing.state === 'installed' && navigator.serviceWorker.controller) {
+              _newSwWaiting = installing;
+              document.getElementById('sw-update-banner').classList.add('show');
+            }
+          });
+        }
+      });
+      // 컨트롤러 바뀌면 한 번만 자동 리로드 (다른 탭에서 업데이트 했을 때)
+      let refreshing = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (refreshing) return;
+        refreshing = true;
+        location.reload();
+      });
+    } catch (err) {
       console.warn('SW 등록 실패:', err);
-    });
+    }
   });
 }
+
+// 오프라인 배너
+function updateOnlineStatus() {
+  const banner = document.getElementById('offline-banner');
+  if (banner) banner.classList.toggle('show', !navigator.onLine);
+}
+window.addEventListener('online', updateOnlineStatus);
+window.addEventListener('offline', updateOnlineStatus);
+window.addEventListener('load', updateOnlineStatus);
 </script>
 </body>
 </html>
