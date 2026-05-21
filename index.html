@@ -754,6 +754,33 @@
   .countdown-pill { display: inline-block; padding: 4px 10px; border-radius: 99px; background: var(--surface2); font-size: 11px; font-weight: 700; }
   .countdown-pill.urgent { background: rgba(255,138,138,0.15); color: #ff8a8a; }
 
+  /* ── 트립 카드 커버 배경 ───────────────────────── */
+  .trip-card-cover {
+    position: absolute; inset: 0; background-size: cover; background-position: center;
+    opacity: 0.35; z-index: 0;
+  }
+  .trip-card-cover-fade {
+    position: absolute; inset: 0; background: linear-gradient(180deg, transparent 0%, var(--surface) 80%);
+    z-index: 1;
+  }
+  .trip-card > .trip-card-row { position: relative; z-index: 2; }
+
+  /* 트립 디테일 헤더 배경 */
+  #topbar.has-cover { background-size: cover; background-position: center; }
+  #topbar.has-cover::after {
+    content:''; position:absolute; inset:0; background: linear-gradient(180deg, rgba(0,0,0,0.55), var(--bg)); z-index: -1;
+  }
+
+  /* 다이어리 entry 카드 */
+  .diary-entry { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-bottom: 10px; }
+  .diary-entry-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .diary-entry-date { font-size: 11px; font-weight: 700; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
+  .diary-entry-mood { font-size: 18px; }
+  .diary-entry-highlight { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+  .diary-entry-content { font-size: 12px; color: var(--text); line-height: 1.6; white-space: pre-wrap; }
+  .diary-entry-photos { display: flex; gap: 6px; margin-top: 8px; overflow-x: auto; }
+  .diary-entry-photos img { width: 80px; height: 80px; object-fit: cover; border-radius: 8px; cursor: zoom-in; flex-shrink: 0; }
+
   /* 데스크탑일 때만 사이드 요약 보이게 */
   #desktop-sidebar { display: none; }
   @media (min-width: 900px) {
@@ -1181,6 +1208,14 @@
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
     구글 내지도 연결
   </div>
+  <div class="menu-item" onclick="openDiarySheet()">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>
+    📔 여행 다이어리
+  </div>
+  <div class="menu-item" onclick="openCoverPhotoModal()">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+    🖼️ 커버 사진 설정
+  </div>
   <div class="menu-item" onclick="openCountryTips()">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
     🌍 국가별 정보
@@ -1264,6 +1299,83 @@
       <button class="secondary-btn" onclick="closeItemEdit()">취소</button>
       <button class="primary-btn" onclick="saveItemEdit()">저장</button>
       <button class="danger-btn" id="ie-delete-btn" onclick="deleteItem()" style="display:none">삭제</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── 커버 사진 모달 ─────────────────────────────── -->
+<div class="modal-overlay" id="cover-photo-modal" onclick="if(event.target===this)closeCoverPhotoModal()">
+  <div class="modal" style="position:relative; max-width:420px">
+    <button class="icon-btn modal-close" onclick="closeCoverPhotoModal()" aria-label="닫기">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </button>
+    <div class="modal-title">🖼️ 커버 사진</div>
+    <div class="modal-sub">트립 카드와 디테일 헤더 배경에 표시됩니다. (Supabase Storage에 업로드, 10MB 이하)</div>
+    <div id="cover-preview" style="width:100%;height:160px;border-radius:10px;background:var(--surface2);background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px"></div>
+    <div style="display:flex; gap:8px">
+      <button class="secondary-btn" onclick="document.getElementById('cover-photo-input').click()">📁 사진 선택</button>
+      <button class="danger-btn" onclick="removeCoverPhoto()" id="cover-remove-btn" style="display:none">제거</button>
+    </div>
+    <input type="file" id="cover-photo-input" accept="image/*" style="display:none" onchange="onCoverPhotoSelected(event)">
+  </div>
+</div>
+
+<!-- ── 다이어리 시트 ──────────────────────────────── -->
+<div class="modal-overlay" id="diary-modal" onclick="if(event.target===this)closeDiarySheet()">
+  <div class="modal" style="position:relative; max-width:520px; height:85vh; display:flex; flex-direction:column">
+    <button class="icon-btn modal-close" onclick="closeDiarySheet()" aria-label="닫기">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </button>
+    <div class="modal-title">📔 여행 다이어리</div>
+    <div class="modal-sub" id="diary-sub">하루를 마치고 짧게 기록. 사진 첨부 가능.</div>
+    <div style="overflow-y:auto;flex:1;padding-right:4px" id="diary-list"></div>
+    <button class="primary-btn" onclick="openDiaryEditor()">+ 오늘 일기 쓰기</button>
+  </div>
+</div>
+
+<!-- ── 다이어리 편집 모달 ─────────────────────────── -->
+<div class="edit-form-overlay" id="diary-edit-overlay" onclick="if(event.target===this)closeDiaryEditor()">
+  <div class="edit-form">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div class="modal-title">📔 다이어리 작성</div>
+      <button class="icon-btn" onclick="closeDiaryEditor()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="field"><span class="field-label">날짜</span>
+      <input class="field-input" id="de-date" type="date"></div>
+    <div class="expense-row-flex">
+      <div class="field"><span class="field-label">날씨</span>
+        <select class="field-select" id="de-weather">
+          <option value="">선택</option>
+          <option value="☀️ 맑음">☀️ 맑음</option>
+          <option value="🌤️ 구름조금">🌤️ 구름조금</option>
+          <option value="☁️ 흐림">☁️ 흐림</option>
+          <option value="🌧️ 비">🌧️ 비</option>
+          <option value="❄️ 눈">❄️ 눈</option>
+          <option value="⛈️ 천둥번개">⛈️ 천둥번개</option>
+        </select></div>
+      <div class="field"><span class="field-label">기분</span>
+        <select class="field-select" id="de-mood">
+          <option value="">선택</option>
+          <option value="😄 최고">😄 최고</option>
+          <option value="🙂 좋음">🙂 좋음</option>
+          <option value="😐 보통">😐 보통</option>
+          <option value="😔 별로">😔 별로</option>
+          <option value="😴 피곤">😴 피곤</option>
+        </select></div>
+    </div>
+    <div class="field"><span class="field-label">오늘의 하이라이트 (한줄)</span>
+      <input class="field-input" id="de-highlight" placeholder="예: 시부야 스카이 일몰이 죽음이었음"></div>
+    <div class="field"><span class="field-label">내용</span>
+      <textarea class="field-textarea" id="de-content" style="min-height:140px" placeholder="자유롭게 적기"></textarea></div>
+    <div class="field"><span class="field-label">사진</span>
+      <div id="de-photos" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px"></div>
+      <button class="secondary-btn" onclick="document.getElementById('de-photo-input').click()">📸 사진 추가</button>
+      <input type="file" id="de-photo-input" accept="image/*" multiple style="display:none" onchange="onDiaryPhotosSelected(event)">
+    </div>
+    <div style="display:flex; gap:8px">
+      <button class="secondary-btn" onclick="closeDiaryEditor()">취소</button>
+      <button class="primary-btn" onclick="saveDiaryEntry()">저장</button>
+      <button class="danger-btn" id="de-delete-btn" onclick="deleteDiaryEntry()" style="display:none">삭제</button>
     </div>
   </div>
 </div>
@@ -1556,14 +1668,14 @@
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-<script src="js/supabase-config.js?v=18"></script>
-<script src="js/cloud.js?v=18"></script>
-<script src="js/seed.js?v=18"></script>
-<script src="js/db.js?v=18"></script>
-<script src="js/ai.js?v=18"></script>
-<script src="js/sync.js?v=18"></script>
-<script src="js/notion-zip.js?v=18"></script>
-<script src="js/maps.js?v=18"></script>
+<script src="js/supabase-config.js?v=19"></script>
+<script src="js/cloud.js?v=19"></script>
+<script src="js/seed.js?v=19"></script>
+<script src="js/db.js?v=19"></script>
+<script src="js/ai.js?v=19"></script>
+<script src="js/sync.js?v=19"></script>
+<script src="js/notion-zip.js?v=19"></script>
+<script src="js/maps.js?v=19"></script>
 <script>
 /* ── DATA (현재 열린 여행에서 동적으로 채워짐) ── */
 let TRIP = null;          // 현재 열린 여행 객체 (IndexedDB에서)
@@ -3174,13 +3286,18 @@ async function renderTripList() {
   cont.innerHTML = trips.map(t => {
     const accent = (t.days && t.days[0] && t.days[0].color) || '#4fc3f7';
     const cd = tripCountdown(t.startDate, t.endDate);
+    const cover = t.cover_url ? `
+      <div class="trip-card-cover" style="background-image:url('${escapeHtml(t.cover_url)}')"></div>
+      <div class="trip-card-cover-fade"></div>
+    ` : '';
     return `
       <div class="trip-card" style="--accent:${accent}" onclick="openTrip('${t.id}')">
+        ${cover}
         <div class="trip-card-row">
           <div class="trip-emoji">${t.emoji || '✈️'}</div>
           <div class="trip-meta">
-            <div class="trip-name">${t.name}</div>
-            <div class="trip-dest">${t.destination || ''}</div>
+            <div class="trip-name">${escapeHtml(t.name)}</div>
+            <div class="trip-dest">${escapeHtml(t.destination || '')}</div>
             <div class="trip-dates">
               <span>${fmtDateRange(t.startDate, t.endDate)}</span>
               <span class="trip-countdown ${cd.past?'past':''}">${cd.label}</span>
@@ -3223,6 +3340,15 @@ async function openTrip(id) {
 
   // 타이틀 갱신
   document.getElementById('trip-title').textContent = `${trip.emoji || ''} ${trip.name}`.trim();
+  // 커버 사진 배경 적용
+  const topbar = document.getElementById('topbar');
+  if (trip.cover_url) {
+    topbar.classList.add('has-cover');
+    topbar.style.backgroundImage = `url('${trip.cover_url}')`;
+  } else {
+    topbar.classList.remove('has-cover');
+    topbar.style.backgroundImage = '';
+  }
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('nav-timeline').classList.add('active');
 
@@ -4064,6 +4190,194 @@ async function actuallyRenderTripMap() {
 
 function closeTripMapView() {
   document.getElementById('trip-map-overlay').classList.remove('open');
+}
+
+/* ── 커버 사진 ──────────────────────────────────── */
+function openCoverPhotoModal() {
+  document.getElementById('trip-menu').classList.remove('open');
+  if (!TRIP) return;
+  if (!_currentUser) { showToast('로그인 후 사용 가능 (Storage 필요)'); openSignIn(); return; }
+  const preview = document.getElementById('cover-preview');
+  if (TRIP.cover_url) {
+    preview.style.backgroundImage = `url('${TRIP.cover_url}')`;
+    preview.textContent = '';
+    document.getElementById('cover-remove-btn').style.display = 'block';
+  } else {
+    preview.style.backgroundImage = '';
+    preview.textContent = '아직 커버 사진 없음';
+    document.getElementById('cover-remove-btn').style.display = 'none';
+  }
+  document.getElementById('cover-photo-modal').classList.add('open');
+}
+function closeCoverPhotoModal() {
+  document.getElementById('cover-photo-modal').classList.remove('open');
+}
+async function onCoverPhotoSelected(event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+  if (file.size > 10 * 1024 * 1024) { showToast('10MB 이하만 가능'); return; }
+  if (!TRIP.cloud_id) {
+    showToast('동기화 중...');
+    try { await Sync.pushTrip(TRIP); } catch (e) { showToast('동기화 실패: '+e.message); return; }
+  }
+  showToast('☁️ 업로드 중...');
+  try {
+    const { publicUrl } = await Cloud.storage.uploadTripPhoto(TRIP.cloud_id, file);
+    TRIP.cover_url = publicUrl;
+    await TripDB.trips.put(TRIP);
+    await Cloud.client.from('trips').update({ cover_url: publicUrl }).eq('id', TRIP.cloud_id);
+    // 즉시 화면 반영
+    const topbar = document.getElementById('topbar');
+    topbar.classList.add('has-cover');
+    topbar.style.backgroundImage = `url('${publicUrl}')`;
+    document.getElementById('cover-preview').style.backgroundImage = `url('${publicUrl}')`;
+    document.getElementById('cover-preview').textContent = '';
+    document.getElementById('cover-remove-btn').style.display = 'block';
+    showToast('🖼️ 커버 사진 설정됨');
+  } catch (err) {
+    showToast('업로드 실패: ' + err.message);
+  }
+  event.target.value = '';
+}
+async function removeCoverPhoto() {
+  if (!TRIP || !confirm('커버 사진을 제거할까요?')) return;
+  TRIP.cover_url = null;
+  await TripDB.trips.put(TRIP);
+  try { if (TRIP.cloud_id) await Cloud.client.from('trips').update({ cover_url: null }).eq('id', TRIP.cloud_id); } catch {}
+  document.getElementById('topbar').classList.remove('has-cover');
+  document.getElementById('topbar').style.backgroundImage = '';
+  closeCoverPhotoModal();
+  showToast('커버 사진 제거됨');
+}
+
+/* ── 다이어리 ────────────────────────────────────── */
+let _diaryEditCtx = null;
+let _diaryDraftPhotos = [];
+
+async function openDiarySheet() {
+  document.getElementById('trip-menu').classList.remove('open');
+  if (!TRIP) return;
+  if (!_currentUser) { showToast('로그인 후 사용 가능'); openSignIn(); return; }
+  if (!TRIP.cloud_id) { showToast('동기화 중...'); try { await Sync.pushTrip(TRIP); } catch (e) { showToast(e.message); return; } }
+
+  const list = document.getElementById('diary-list');
+  list.innerHTML = '<div style="padding:16px;color:var(--muted);font-size:12px">로딩 중...</div>';
+  document.getElementById('diary-modal').classList.add('open');
+
+  try {
+    const entries = await Cloud.diary.listByTrip(TRIP.cloud_id);
+    if (entries.length === 0) {
+      list.innerHTML = '<div style="padding:24px;text-align:center;color:var(--muted);font-size:13px">아직 일기가 없어요.<br>아래 버튼으로 첫 일기를 적어보세요.</div>';
+    } else {
+      list.innerHTML = entries.map(e => {
+        const photos = (e.photo_urls || []).map(u => `<img src="${escapeHtml(u)}" loading="lazy" onclick="event.stopPropagation();openPhotoViewer('${u}')">`).join('');
+        return `
+          <div class="diary-entry" onclick="editDiaryEntry('${e.id}')" style="cursor:pointer">
+            <div class="diary-entry-head">
+              <span class="diary-entry-date">${e.entry_date} ${e.weather ? '· ' + escapeHtml(e.weather) : ''}</span>
+              <span class="diary-entry-mood">${escapeHtml(e.mood || '')}</span>
+            </div>
+            ${e.highlight ? `<div class="diary-entry-highlight">${escapeHtml(e.highlight)}</div>` : ''}
+            ${e.content ? `<div class="diary-entry-content">${escapeHtml(e.content)}</div>` : ''}
+            ${photos ? `<div class="diary-entry-photos">${photos}</div>` : ''}
+          </div>
+        `;
+      }).join('');
+    }
+  } catch (e) {
+    list.innerHTML = `<div style="color:#ff8a8a;padding:12px;font-size:12px">불러오기 실패: ${e.message}</div>`;
+  }
+}
+function closeDiarySheet() {
+  document.getElementById('diary-modal').classList.remove('open');
+}
+
+function openDiaryEditor(existing) {
+  _diaryEditCtx = existing ? { id: existing.id } : null;
+  _diaryDraftPhotos = existing?.photo_urls ? [...existing.photo_urls] : [];
+  document.getElementById('de-date').value = existing?.entry_date || new Date().toISOString().slice(0,10);
+  document.getElementById('de-weather').value = existing?.weather || '';
+  document.getElementById('de-mood').value = existing?.mood || '';
+  document.getElementById('de-highlight').value = existing?.highlight || '';
+  document.getElementById('de-content').value = existing?.content || '';
+  document.getElementById('de-delete-btn').style.display = existing ? 'block' : 'none';
+  refreshDiaryDraftPhotos();
+  document.getElementById('diary-edit-overlay').classList.add('open');
+}
+
+function refreshDiaryDraftPhotos() {
+  document.getElementById('de-photos').innerHTML = _diaryDraftPhotos.map((u, i) => `
+    <div style="position:relative">
+      <img src="${escapeHtml(u)}" style="width:80px;height:80px;object-fit:cover;border-radius:8px">
+      <button class="icon-btn" style="position:absolute;top:-6px;right:-6px;width:22px;height:22px;background:var(--bg);border:1px solid var(--border)" onclick="removeDiaryDraftPhoto(${i})">×</button>
+    </div>
+  `).join('');
+}
+
+function removeDiaryDraftPhoto(idx) {
+  _diaryDraftPhotos.splice(idx, 1);
+  refreshDiaryDraftPhotos();
+}
+
+async function editDiaryEntry(id) {
+  try {
+    const entries = await Cloud.diary.listByTrip(TRIP.cloud_id);
+    const entry = entries.find(e => e.id === id);
+    if (entry) openDiaryEditor(entry);
+  } catch (e) { showToast('로드 실패: ' + e.message); }
+}
+
+async function onDiaryPhotosSelected(event) {
+  const files = Array.from(event.target.files || []);
+  if (files.length === 0) return;
+  if (!TRIP.cloud_id) { showToast('동기화 필요'); return; }
+  showToast('☁️ 업로드 중...');
+  for (const file of files) {
+    if (file.size > 10 * 1024 * 1024) continue;
+    try {
+      const { publicUrl } = await Cloud.storage.uploadTripPhoto(TRIP.cloud_id, file);
+      _diaryDraftPhotos.push(publicUrl);
+    } catch (e) { console.warn('업로드 실패:', e.message); }
+  }
+  refreshDiaryDraftPhotos();
+  event.target.value = '';
+}
+
+async function saveDiaryEntry() {
+  if (!TRIP?.cloud_id) return;
+  const entry = {
+    trip_id: TRIP.cloud_id,
+    entry_date: document.getElementById('de-date').value || new Date().toISOString().slice(0,10),
+    weather: document.getElementById('de-weather').value || null,
+    mood: document.getElementById('de-mood').value || null,
+    highlight: document.getElementById('de-highlight').value.trim() || null,
+    content: document.getElementById('de-content').value.trim() || null,
+    photo_urls: _diaryDraftPhotos,
+  };
+  if (_diaryEditCtx?.id) entry.id = _diaryEditCtx.id;
+  try {
+    await Cloud.diary.upsert(entry);
+    closeDiaryEditor();
+    await openDiarySheet(); // 리프레시
+    showToast(_diaryEditCtx ? '✅ 수정됨' : '📔 저장됨');
+  } catch (e) { showToast('저장 실패: ' + e.message); }
+}
+
+function closeDiaryEditor() {
+  document.getElementById('diary-edit-overlay').classList.remove('open');
+  _diaryEditCtx = null;
+  _diaryDraftPhotos = [];
+}
+
+async function deleteDiaryEntry() {
+  if (!_diaryEditCtx?.id) return;
+  if (!confirm('이 일기를 삭제할까요?')) return;
+  try {
+    await Cloud.diary.remove(_diaryEditCtx.id);
+    closeDiaryEditor();
+    await openDiarySheet();
+    showToast('🗑️ 삭제됨');
+  } catch (e) { showToast('실패: ' + e.message); }
 }
 
 /* ── 국가별 정보 모달 ────────────────────────────── */

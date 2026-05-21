@@ -381,6 +381,30 @@
     },
   };
 
+  // ── Diary (일기) ──────────────────────────────────
+  const diary = {
+    async listByTrip(tripId) {
+      const { data, error } = await client
+        .from('diary_entries')
+        .select('*')
+        .eq('trip_id', tripId)
+        .order('entry_date', { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+    async upsert(entry) {
+      const user = await auth.user();
+      const payload = { ...entry, author_id: entry.author_id || user?.id };
+      const { data, error } = await client.from('diary_entries').upsert(payload).select().single();
+      if (error) throw error;
+      return data;
+    },
+    async remove(id) {
+      const { error } = await client.from('diary_entries').delete().eq('id', id);
+      if (error) throw error;
+    },
+  };
+
   // ── App config (운영자 중앙 키) ──────────────────
   const _appConfigCache = new Map();
   const appConfig = {
@@ -460,6 +484,7 @@
     storage,
     lodgings,
     reservations,
+    diary,
     appConfig,
     ping,
   };
