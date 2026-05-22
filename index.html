@@ -1909,15 +1909,15 @@
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-<script src="js/supabase-config.js?v=25"></script>
-<script src="js/cloud.js?v=25"></script>
-<script src="js/seed.js?v=25"></script>
-<script src="js/db.js?v=25"></script>
-<script src="js/ai.js?v=25"></script>
-<script src="js/sync.js?v=25"></script>
-<script src="js/notion-zip.js?v=25"></script>
-<script src="js/maps.js?v=25"></script>
-<script src="js/emergency.js?v=25"></script>
+<script src="js/supabase-config.js?v=26"></script>
+<script src="js/cloud.js?v=26"></script>
+<script src="js/seed.js?v=26"></script>
+<script src="js/db.js?v=26"></script>
+<script src="js/ai.js?v=26"></script>
+<script src="js/sync.js?v=26"></script>
+<script src="js/notion-zip.js?v=26"></script>
+<script src="js/maps.js?v=26"></script>
+<script src="js/emergency.js?v=26"></script>
 <script>
 /* ── DATA (현재 열린 여행에서 동적으로 채워짐) ── */
 let TRIP = null;          // 현재 열린 여행 객체 (IndexedDB에서)
@@ -3640,7 +3640,7 @@ function fmtDateRange(startISO, endISO) {
 }
 
 function tripCountdown(startISO, endISO) {
-  // 출발 D-N, 여행 중, 종료 후
+  // 출발 D-N, 여행 중 (N/M일차), 종료 후 (N일 전 종료)
   try {
     const today = new Date(); today.setHours(0,0,0,0);
     const start = new Date(startISO + 'T00:00:00');
@@ -3648,10 +3648,14 @@ function tripCountdown(startISO, endISO) {
     const dayMs = 86400000;
     const dToStart = Math.round((start - today) / dayMs);
     const dFromEnd = Math.round((today - end) / dayMs);
-    if (today >= start && today <= end) return { label: '여행 중', past: false };
+    if (dToStart === 0) return { label: 'D-Day 🎉', past: false };
+    if (today >= start && today <= end) {
+      const dayNum = Math.round((today - start) / dayMs) + 1;
+      const totalDays = Math.round((end - start) / dayMs) + 1;
+      return { label: `여행 중 · ${dayNum}/${totalDays}일차`, past: false };
+    }
     if (dToStart > 0) return { label: `D-${dToStart}`, past: false };
-    if (dToStart === 0) return { label: 'D-Day', past: false };
-    return { label: `${dFromEnd}일 후`, past: true };
+    return { label: `${dFromEnd}일 전 종료`, past: true };
   } catch { return { label: '', past: false }; }
 }
 

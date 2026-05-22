@@ -10,7 +10,7 @@
 ## 1. 한눈에 보는 현재 상태 (2026-05-22 기준)
 
 - **앱 정체성**: 도쿄 → 유럽 60일까지 커버하는 **멀티트립 오프라인 PWA**.
-- **현재 버전**: `v25` (SW `CACHE_VERSION`, `index.html` 쿼리스트링과 일치 필요)
+- **현재 버전**: `v26` (SW `CACHE_VERSION`, `index.html` 쿼리스트링과 일치 필요)
 - **배포**: GitHub Pages, `main` 브랜치 root. 푸시하면 자동 반영.
 - **호스팅 URL**: GitHub Pages (`<account>.github.io/<repo>/`) — 정확한 URL은 git remote 참고.
 - **데이터**: 로컬 IndexedDB가 source of truth, Supabase는 로그인 시 미러 동기화.
@@ -95,6 +95,7 @@ travel/
 | v23  | 🎞️ 추억 모드 — 트립 종료 후 자동 슬라이드쇼 (커버·다이어리·체크·지출·클로징) |
 | v24  | 🏙️ 노션 도시 후보 — 유럽 트립 메뉴에서 20개 도시 reference (역할 필터 + 노션 deep link). openTrip seed merge 로직 추가 |
 | v25  | 🆘 비상정보 (12개국+한국, 응급/영사관/카드분실) + ↗ 1일치 일정 공유 (Web Share API + 클립보드 fallback) |
+| v26  | 자율 polish — tripCountdown "N/M일차" + "N일 전 종료" + D-Day 우선순위 정리. v22~v25 stress test 통과 |
 
 ---
 
@@ -192,3 +193,10 @@ git push
 - 캐시 v25 통일, sw.js PRECACHE에 emergency.js 추가.
 - 검증: 도쿄 트립 → 2 섹션 (🇯🇵 일본 + 🇰🇷 한국 공통), 22개 tel 링크, 1일치 공유 텍스트 정상 포맷.
 - **함정 없음**, 콘솔 에러 0.
+
+### 2026-05-22 — v26 자율 polish (5라운드 후 안정화)
+- 모바일 375×812에서 14개 트립 메뉴 항목 click-through, Day 탭 전환, 체크리스트 뷰 전환 — **전부 정상, 가로 오버플로 없음, 콘솔 에러 0**. v22~v25에 새로 추가한 기능들이 깨끗하게 통합됨.
+- 발견된 진짜 issue 1개 — `tripCountdown` 라벨 정리:
+  - 기존: "여행 중" / "${dFromEnd}일 후" (애매함)
+  - 개선: "여행 중 · N/M일차" / "${dFromEnd}일 전 종료" / "D-Day 🎉" 우선순위 최상
+- 검증: D-Day 1일/다일, 여행 중 3/6일차, D-3, 4일 전 종료 모두 정상.
