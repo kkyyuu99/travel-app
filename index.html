@@ -150,8 +150,26 @@
   .wx-rain { color: #60a5fa; font-size: 9px; }
 
   /* Progress bar */
-  #progress-bar { height: 2px; background: rgba(255,255,255,0.05); flex-shrink: 0; }
+  #progress-bar { height: 2px; background: rgba(255,255,255,0.05); flex-shrink: 0; position: relative; }
   #progress-fill { height: 100%; background: var(--day-color); transition: width 0.4s; width: 0%; }
+  /* Day 진행률 라벨 (sticky-now 바 안에 합쳐 표시) */
+  #sticky-now {
+    display: none;
+    position: sticky; top: 0; z-index: 49;
+    padding: 8px 12px;
+    background: color-mix(in srgb, var(--day-color, #4fc3f7) 14%, var(--topbar-bg));
+    backdrop-filter: blur(14px);
+    border-bottom: 1px solid color-mix(in srgb, var(--day-color, #4fc3f7) 30%, transparent);
+    font-size: 11px; font-weight: 700; color: var(--text);
+    align-items: center; gap: 10px;
+  }
+  #sticky-now.show { display: flex; }
+  #sticky-now .sn-now { color: var(--day-color, #4fc3f7); flex-shrink: 0; }
+  #sticky-now .sn-next { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-weight: 500; }
+  #sticky-now .sn-next b { color: var(--text); font-weight: 700; }
+  #sticky-now .sn-eta { flex-shrink: 0; padding: 2px 8px; border-radius: 99px; background: color-mix(in srgb, var(--day-color, #4fc3f7) 22%, transparent); color: var(--day-color, #4fc3f7); font-size: 10px; }
+  #sticky-now .sn-prog { flex-shrink: 0; font-size: 10px; color: var(--muted); }
+  #sticky-now .sn-prog b { color: var(--text); }
 
   /* Scroll area */
   #scroll-area {
@@ -790,6 +808,82 @@
   .app-banner button { background: var(--day-color, #4fc3f7); color: #0d1117; border: none; border-radius: 99px; padding: 4px 10px; font-size: 11px; font-weight: 700; cursor: pointer; }
   @keyframes bannerSlide { from { opacity: 0; transform: translate(-50%, -10px); } to { opacity: 1; transform: translate(-50%, 0); } }
 
+  /* ── 추억 모드 (Memories) ────────────────────────── */
+  #memories-overlay {
+    position: fixed; inset: 0; z-index: 200;
+    background: #000; display: none;
+    flex-direction: column; touch-action: pan-y;
+  }
+  #memories-overlay.show { display: flex; }
+  .mem-close {
+    position: absolute; top: calc(var(--safe-top) + 12px); right: 12px; z-index: 4;
+    width: 36px; height: 36px; border-radius: 50%;
+    background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2);
+    color: white; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    backdrop-filter: blur(8px);
+  }
+  .mem-dots {
+    position: absolute; top: calc(var(--safe-top) + 14px); left: 12px; right: 60px; z-index: 3;
+    display: flex; gap: 3px;
+  }
+  .mem-dot {
+    flex: 1; height: 2px; background: rgba(255,255,255,0.25); border-radius: 1px; overflow: hidden;
+  }
+  .mem-dot-fill { height: 100%; background: white; width: 0%; transition: width 0.1s linear; }
+  .mem-dot.done .mem-dot-fill { width: 100%; }
+  .mem-dot.active .mem-dot-fill { width: var(--p, 0%); }
+  .mem-slide {
+    flex: 1; display: none; flex-direction: column;
+    padding: calc(var(--safe-top) + 50px) 20px calc(var(--safe-bottom) + 24px);
+    color: white; overflow-y: auto;
+  }
+  .mem-slide.show { display: flex; animation: memFade 0.4s ease; }
+  @keyframes memFade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .mem-tap-zones { position: absolute; inset: 0; z-index: 2; display: flex; }
+  .mem-tap { flex: 1; cursor: pointer; }
+  .mem-pause {
+    position: absolute; bottom: calc(var(--safe-bottom) + 14px); left: 50%; transform: translateX(-50%);
+    z-index: 4; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2);
+    color: white; padding: 6px 14px; border-radius: 99px; font-size: 11px; cursor: pointer;
+    backdrop-filter: blur(8px);
+  }
+  /* Cover */
+  .mem-cover {
+    background: var(--cover-bg, linear-gradient(135deg, #1a1a2e, #0d1117));
+    background-size: cover; background-position: center;
+    flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center;
+    text-align: center; position: relative;
+  }
+  .mem-cover::before { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.7) 100%); }
+  .mem-cover > * { position: relative; z-index: 1; }
+  .mem-cover-label { font-size: 11px; color: rgba(255,255,255,0.7); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 10px; }
+  .mem-cover-title { font-size: 28px; font-weight: 700; font-family: 'Noto Serif KR', Georgia, serif; line-height: 1.3; margin-bottom: 8px; }
+  .mem-cover-dates { font-size: 13px; color: rgba(255,255,255,0.75); margin-bottom: 16px; }
+  .mem-cover-stats { display: flex; gap: 14px; font-size: 11px; color: rgba(255,255,255,0.6); }
+  .mem-cover-stats b { color: white; font-size: 18px; font-weight: 700; display: block; }
+  /* 다이어리 슬라이드 */
+  .mem-diary-date { font-size: 11px; color: rgba(255,255,255,0.55); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; }
+  .mem-diary-meta { display: flex; gap: 8px; font-size: 18px; margin-bottom: 14px; }
+  .mem-diary-highlight { font-size: 20px; font-weight: 700; font-family: 'Noto Serif KR', Georgia, serif; line-height: 1.4; margin-bottom: 12px; }
+  .mem-diary-content { font-size: 13px; line-height: 1.7; color: rgba(255,255,255,0.85); white-space: pre-wrap; margin-bottom: 14px; }
+  .mem-diary-photos { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 6px; }
+  .mem-diary-photos img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 10px; }
+  /* 요약 슬라이드 */
+  .mem-summary-title { font-size: 11px; color: rgba(255,255,255,0.55); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 8px; }
+  .mem-summary-h { font-size: 24px; font-weight: 700; font-family: 'Noto Serif KR', Georgia, serif; margin-bottom: 6px; }
+  .mem-summary-sub { font-size: 13px; color: rgba(255,255,255,0.6); margin-bottom: 18px; }
+  .mem-stat-row { display: flex; align-items: baseline; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.1); font-size: 13px; color: rgba(255,255,255,0.8); }
+  .mem-stat-row b { color: white; font-size: 16px; font-weight: 700; }
+  .mem-highlight-list { margin-top: 14px; display: flex; flex-direction: column; gap: 7px; }
+  .mem-highlight-list li { font-size: 12px; color: rgba(255,255,255,0.85); padding: 7px 12px; border-radius: 8px; background: rgba(255,255,255,0.06); list-style: none; }
+  .mem-closing {
+    flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center;
+    text-align: center; gap: 16px;
+  }
+  .mem-closing-emoji { font-size: 56px; }
+  .mem-closing-h { font-size: 24px; font-weight: 700; font-family: 'Noto Serif KR', Georgia, serif; }
+  .mem-closing-sub { font-size: 13px; color: rgba(255,255,255,0.6); max-width: 280px; line-height: 1.6; }
+
   /* ── Now 인디케이터 ────────────────────────────── */
   .now-marker {
     display: flex; align-items: center; gap: 8px; padding: 6px 12px;
@@ -1257,6 +1351,10 @@
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>
     📔 여행 다이어리
   </div>
+  <div class="menu-item" onclick="openMemoriesSheet()">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+    🎞️ 추억 모드
+  </div>
   <div class="menu-item" onclick="openCoverPhotoModal()">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
     🖼️ 커버 사진 설정
@@ -1566,6 +1664,8 @@
 
 <div id="progress-bar"><div id="progress-fill"></div></div>
 
+<div id="sticky-now" role="status" aria-live="polite"></div>
+
 <div id="scroll-area"></div>
 
 <div id="desktop-sidebar"></div>
@@ -1717,18 +1817,32 @@
   </div>
 </div>
 
+<!-- 추억 모드 풀스크린 오버레이 -->
+<div id="memories-overlay" role="dialog" aria-modal="true" aria-label="추억 모드">
+  <div class="mem-dots" id="mem-dots"></div>
+  <button class="mem-close" onclick="closeMemoriesSheet()" aria-label="닫기">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+  </button>
+  <div class="mem-tap-zones">
+    <div class="mem-tap" onclick="memPrev()" aria-label="이전"></div>
+    <div class="mem-tap" onclick="memNext()" aria-label="다음"></div>
+  </div>
+  <div id="mem-slides-container"></div>
+  <button class="mem-pause" id="mem-pause-btn" onclick="memTogglePause()">⏸ 일시정지</button>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-<script src="js/supabase-config.js?v=21"></script>
-<script src="js/cloud.js?v=21"></script>
-<script src="js/seed.js?v=21"></script>
-<script src="js/db.js?v=21"></script>
-<script src="js/ai.js?v=21"></script>
-<script src="js/sync.js?v=21"></script>
-<script src="js/notion-zip.js?v=21"></script>
-<script src="js/maps.js?v=21"></script>
+<script src="js/supabase-config.js?v=23"></script>
+<script src="js/cloud.js?v=23"></script>
+<script src="js/seed.js?v=23"></script>
+<script src="js/db.js?v=23"></script>
+<script src="js/ai.js?v=23"></script>
+<script src="js/sync.js?v=23"></script>
+<script src="js/notion-zip.js?v=23"></script>
+<script src="js/maps.js?v=23"></script>
 <script>
 /* ── DATA (현재 열린 여행에서 동적으로 채워짐) ── */
 let TRIP = null;          // 현재 열린 여행 객체 (IndexedDB에서)
@@ -2178,6 +2292,49 @@ function renderProgress() {
   const checked = day.items.filter(it => checkedItems[it.id]).length;
   const pct = day.items.length > 0 ? (checked / day.items.length) * 100 : 0;
   document.getElementById('progress-fill').style.width = pct + '%';
+  renderStickyNow();
+}
+
+/* ── STICKY NOW BAR (오늘 Day에서만) ── */
+function renderStickyNow() {
+  const bar = document.getElementById('sticky-now');
+  if (!bar) return;
+  const day = DAYS.find(d => d.day === activeDay);
+  if (!day || currentView !== 'timeline') { bar.classList.remove('show'); bar.innerHTML = ''; return; }
+  const todayISO = new Date().toISOString().slice(0, 10);
+  if (day.date !== todayISO) { bar.classList.remove('show'); bar.innerHTML = ''; return; }
+  // 시간 파싱
+  const now = new Date();
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+  const nowStr = now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+  const parse = t => {
+    if (!t || !/^\d{1,2}:\d{2}/.test(t)) return null;
+    const [h, m] = t.split(':').map(Number);
+    return h * 60 + m;
+  };
+  // 다음 항목 찾기
+  let next = null, nextMin = null;
+  for (const it of day.items) {
+    const m = parse(it.time);
+    if (m !== null && m >= nowMin) { next = it; nextMin = m; break; }
+  }
+  // 진행률
+  const checked = day.items.filter(it => checkedItems[it.id]).length;
+  const total = day.items.length;
+  let html = `<span class="sn-now">🔵 ${nowStr}</span>`;
+  if (next) {
+    const dMin = nextMin - nowMin;
+    const eta = dMin <= 0 ? '곧' : (dMin < 60 ? `${dMin}분 후` : `${Math.floor(dMin/60)}시간 ${dMin%60}분 후`);
+    const title = escapeHtml(next.title || '').slice(0, 40);
+    html += `<span class="sn-next">다음 <b>${next.time} ${title}</b></span><span class="sn-eta">${eta}</span>`;
+  } else if (total > 0) {
+    html += `<span class="sn-next">🎉 <b>오늘 일정 완료</b></span>`;
+  } else {
+    html += `<span class="sn-next">오늘 일정 없음</span>`;
+  }
+  if (total > 0) html += `<span class="sn-prog"><b>${checked}</b>/${total}</span>`;
+  bar.innerHTML = html;
+  bar.classList.add('show');
 }
 
 /* ── RENDER TIMELINE ── */
@@ -2344,16 +2501,15 @@ function renderTimeline() {
   }
 }
 
-// 1분마다 타임라인 자동 갱신 (Now 마커 위치 이동)
+// 1분마다 타임라인 자동 갱신 (Now 마커 위치 이동 + sticky-now ETA 갱신)
 if (!window._nowTickInterval) {
   window._nowTickInterval = setInterval(() => {
-    if (TRIP && currentView === 'timeline') {
-      const todayISO = new Date().toISOString().slice(0, 10);
-      const activeDayObj = DAYS.find(d => d.day === activeDay);
-      if (activeDayObj && activeDayObj.date === todayISO) {
-        renderTimeline();
-      }
-    }
+    if (!TRIP) return;
+    const todayISO = new Date().toISOString().slice(0, 10);
+    const activeDayObj = DAYS.find(d => d.day === activeDay);
+    if (!activeDayObj || activeDayObj.date !== todayISO) return;
+    if (currentView === 'timeline') renderTimeline();
+    renderStickyNow();
   }, 60000);
 }
 
@@ -2728,6 +2884,7 @@ function switchView(view) {
   document.getElementById('nav-' + view).classList.add('active');
   if (view === 'timeline') renderTimeline();
   else if (view === 'check') renderChecklist();
+  renderStickyNow();
 }
 
 function switchDay(day) {
@@ -4449,6 +4606,259 @@ function closeDiarySheet() {
   document.getElementById('diary-modal').classList.remove('open');
 }
 
+/* ── 추억 모드 (Memories slideshow) ─────────────────── */
+let _memSlides = [];
+let _memIndex = 0;
+let _memTimer = null;
+let _memProgressTimer = null;
+let _memPaused = false;
+const MEM_SLIDE_MS = 6000;
+
+async function openMemoriesSheet() {
+  if (!TRIP) return;
+  document.getElementById('trip-menu').classList.remove('open');
+  const overlay = document.getElementById('memories-overlay');
+  const container = document.getElementById('mem-slides-container');
+  container.innerHTML = `<div class="mem-slide show" style="justify-content:center;align-items:center;text-align:center"><div style="font-size:32px;margin-bottom:14px">🎞️</div><div style="font-size:13px;color:rgba(255,255,255,0.7)">추억 정리하는 중...</div></div>`;
+  overlay.classList.add('show');
+  document.body.style.overflow = 'hidden';
+
+  try {
+    _memSlides = await buildMemorySlides();
+    if (!_memSlides.length) {
+      container.innerHTML = `<div class="mem-slide show" style="justify-content:center;align-items:center;text-align:center;padding:40px 24px"><div style="font-size:40px;margin-bottom:16px">📭</div><div style="font-size:14px;color:white;margin-bottom:6px">아직 추억이 없어요</div><div style="font-size:12px;color:rgba(255,255,255,0.6);line-height:1.6">다이어리·체크·지출이 쌓이면<br>여기에 자동으로 나타나요</div></div>`;
+      document.getElementById('mem-dots').innerHTML = '';
+      document.getElementById('mem-pause-btn').style.display = 'none';
+      return;
+    }
+    document.getElementById('mem-pause-btn').style.display = 'block';
+    _memIndex = 0;
+    _memPaused = false;
+    renderMemDots();
+    renderMemSlides(container);
+    showMemSlide(0);
+    startMemTimer();
+  } catch (e) {
+    container.innerHTML = `<div class="mem-slide show" style="justify-content:center;align-items:center;text-align:center;color:#ff8a8a;padding:24px">불러오기 실패: ${escapeHtml(e.message || '')}</div>`;
+  }
+}
+
+function closeMemoriesSheet() {
+  document.getElementById('memories-overlay').classList.remove('show');
+  document.body.style.overflow = '';
+  stopMemTimer();
+  _memSlides = [];
+}
+
+async function buildMemorySlides() {
+  const slides = [];
+  // 1) 표지
+  const cover = TRIP.cover_url || TRIP.cover_photo || '';
+  const dayCount = (TRIP.days || DAYS || []).length;
+  const itemCount = (TRIP.days || DAYS || []).reduce((s, d) => s + (d.items || []).length, 0);
+  slides.push({
+    type: 'cover',
+    title: TRIP.title || TRIP.name || '여행',
+    dates: TRIP.dates || (TRIP.start_date && TRIP.end_date ? `${TRIP.start_date} ~ ${TRIP.end_date}` : ''),
+    cover,
+    dayCount, itemCount,
+  });
+
+  // 2) 다이어리 entries (클라우드만 — 로그인된 경우)
+  let diaryEntries = [];
+  if (window.Cloud?.enabled && TRIP.cloud_id) {
+    try { diaryEntries = await Cloud.diary.listByTrip(TRIP.cloud_id); } catch(_) {}
+  }
+  diaryEntries.forEach(e => {
+    slides.push({
+      type: 'diary',
+      date: e.entry_date,
+      weather: e.weather || '',
+      mood: e.mood || '',
+      highlight: e.highlight || '',
+      content: e.content || '',
+      photos: e.photo_urls || [],
+    });
+  });
+
+  // 3) 체크 완료 요약
+  const allItems = (TRIP.days || DAYS || []).flatMap(d => (d.items || []).map(it => ({...it, _day: d.day, _date: d.date})));
+  const doneItems = allItems.filter(it => checkedItems[it.id]);
+  if (allItems.length > 0) {
+    slides.push({
+      type: 'checks',
+      total: allItems.length,
+      done: doneItems.length,
+      percent: Math.round(doneItems.length / allItems.length * 100),
+      highlights: doneItems.filter(it => it.highlight).slice(0, 8).map(it => `${it.icon || '✨'} ${it.title}`),
+    });
+  }
+
+  // 4) 지출 요약 — 로컬 expenses 우선, 비면 클라우드 시도
+  let allExp = [];
+  Object.entries(expenses || {}).forEach(([dayStr, list]) => {
+    (list || []).forEach(e => allExp.push({ ...e, _day: dayStr }));
+  });
+  if (allExp.length === 0 && window.Cloud?.enabled && TRIP.cloud_id) {
+    try {
+      const rows = await Cloud.expenses.listByTrip(TRIP.cloud_id);
+      allExp = (rows || []).map(r => ({ cat: r.category, amount: Number(r.amount) || 0, note: r.note }));
+    } catch(_) {}
+  }
+  if (allExp.length > 0) {
+    const total = allExp.reduce((s, e) => s + (Number(e.amount) || 0), 0);
+    const byCat = {};
+    allExp.forEach(e => { const k = e.cat || '기타'; byCat[k] = (byCat[k] || 0) + (Number(e.amount) || 0); });
+    const sortedCats = Object.entries(byCat).sort((a,b)=>b[1]-a[1]);
+    slides.push({
+      type: 'expenses',
+      total,
+      currency: TRIP.currency || '',
+      byCategory: sortedCats,
+      count: allExp.length,
+    });
+  }
+
+  // 5) 클로징 (콘텐츠가 cover뿐이 아닐 때만)
+  if (slides.length > 1) {
+    const isOver = (() => {
+      const end = TRIP.end_date || (TRIP.days?.[TRIP.days.length-1]?.date);
+      if (!end) return false;
+      return new Date(end) < new Date(new Date().toISOString().slice(0,10));
+    })();
+    slides.push({
+      type: 'closing',
+      isOver,
+    });
+  }
+  return slides;
+}
+
+function renderMemDots() {
+  const dots = document.getElementById('mem-dots');
+  dots.innerHTML = _memSlides.map((_, i) =>
+    `<div class="mem-dot" id="mem-dot-${i}"><div class="mem-dot-fill"></div></div>`
+  ).join('');
+}
+
+function renderMemSlides(container) {
+  container.innerHTML = _memSlides.map((s, i) => `<div class="mem-slide" id="mem-slide-${i}">${renderMemSlide(s)}</div>`).join('');
+}
+
+function renderMemSlide(s) {
+  switch (s.type) {
+    case 'cover': {
+      const bgStyle = s.cover ? `--cover-bg: url('${escapeHtml(s.cover).replace(/'/g, "\\'")}')` : '';
+      return `<div class="mem-cover" style="${bgStyle}">
+        <div class="mem-cover-label">우리의 여행</div>
+        <div class="mem-cover-title">${escapeHtml(s.title)}</div>
+        ${s.dates ? `<div class="mem-cover-dates">${escapeHtml(s.dates)}</div>` : ''}
+        <div class="mem-cover-stats">
+          <div><b>${s.dayCount}</b>일</div>
+          <div><b>${s.itemCount}</b>개 일정</div>
+        </div>
+      </div>`;
+    }
+    case 'diary': {
+      const dateStr = formatMemDate(s.date);
+      return `<div class="mem-diary-date">${escapeHtml(dateStr)}</div>
+        <div class="mem-diary-meta">${escapeHtml(s.weather)}${s.weather && s.mood ? ' · ' : ''}${escapeHtml(s.mood)}</div>
+        ${s.highlight ? `<div class="mem-diary-highlight">${escapeHtml(s.highlight)}</div>` : ''}
+        ${s.content ? `<div class="mem-diary-content">${escapeHtml(s.content)}</div>` : ''}
+        ${s.photos.length ? `<div class="mem-diary-photos">${s.photos.map(p => `<img src="${escapeHtml(p)}" loading="lazy">`).join('')}</div>` : ''}`;
+    }
+    case 'checks': {
+      const list = s.highlights.length ? `<ul class="mem-highlight-list">${s.highlights.map(h => `<li>${escapeHtml(h)}</li>`).join('')}</ul>` : '';
+      return `<div class="mem-summary-title">체크 완료</div>
+        <div class="mem-summary-h">${s.done}/${s.total} 완료</div>
+        <div class="mem-summary-sub">${s.percent}% 다녀왔어요</div>
+        ${list ? `<div style="margin-top:8px;font-size:11px;color:rgba(255,255,255,0.55);margin-bottom:4px">⭐ 하이라이트</div>${list}` : ''}`;
+    }
+    case 'expenses': {
+      const rows = s.byCategory.map(([cat, amt]) =>
+        `<div class="mem-stat-row"><span>${escapeHtml(cat)}</span><b>${formatMemMoney(amt, s.currency)}</b></div>`
+      ).join('');
+      return `<div class="mem-summary-title">지출 요약</div>
+        <div class="mem-summary-h">${formatMemMoney(s.total, s.currency)}</div>
+        <div class="mem-summary-sub">${s.count}건 기록</div>
+        <div style="margin-top:8px">${rows}</div>`;
+    }
+    case 'closing': {
+      return `<div class="mem-closing">
+        <div class="mem-closing-emoji">${s.isOver ? '🌅' : '✨'}</div>
+        <div class="mem-closing-h">${s.isOver ? '여행, 잘 다녀왔어요' : '여행, 진행 중'}</div>
+        <div class="mem-closing-sub">${s.isOver ? '다음 여행은 어디로 떠나볼까요?' : '하루하루가 추억이 되고 있어요.<br>매일 저녁 다이어리 한 줄 추천 ✏️'}</div>
+      </div>`;
+    }
+  }
+  return '';
+}
+
+function formatMemDate(iso) {
+  if (!iso) return '';
+  try {
+    const d = new Date(iso);
+    return d.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' });
+  } catch { return iso; }
+}
+function formatMemMoney(amt, currency) {
+  const n = Number(amt) || 0;
+  const formatted = n.toLocaleString('ko-KR');
+  if (!currency) return formatted;
+  const sym = { JPY: '¥', EUR: '€', USD: '$', KRW: '₩', GBP: '£' }[currency] || '';
+  return sym ? `${sym}${formatted}` : `${formatted} ${currency}`;
+}
+
+function showMemSlide(i) {
+  if (i < 0) i = 0;
+  if (i >= _memSlides.length) i = _memSlides.length - 1;
+  _memIndex = i;
+  document.querySelectorAll('#mem-slides-container .mem-slide').forEach((el, idx) => {
+    el.classList.toggle('show', idx === i);
+  });
+  document.querySelectorAll('.mem-dot').forEach((el, idx) => {
+    el.classList.toggle('done', idx < i);
+    el.classList.toggle('active', idx === i);
+    if (idx > i) el.classList.remove('done', 'active');
+    if (idx === i) el.style.setProperty('--p', '0%');
+    if (idx !== i) {
+      const fill = el.querySelector('.mem-dot-fill');
+      if (fill && idx > i) fill.style.width = '0%';
+    }
+  });
+}
+function memNext() {
+  if (_memIndex >= _memSlides.length - 1) { closeMemoriesSheet(); return; }
+  showMemSlide(_memIndex + 1);
+  if (!_memPaused) startMemTimer();
+}
+function memPrev() {
+  if (_memIndex <= 0) return;
+  showMemSlide(_memIndex - 1);
+  if (!_memPaused) startMemTimer();
+}
+function startMemTimer() {
+  stopMemTimer();
+  if (_memPaused) return;
+  const start = Date.now();
+  const dot = document.querySelector(`#mem-dot-${_memIndex} .mem-dot-fill`);
+  _memProgressTimer = setInterval(() => {
+    const pct = Math.min(100, (Date.now() - start) / MEM_SLIDE_MS * 100);
+    if (dot) dot.style.width = pct + '%';
+  }, 80);
+  _memTimer = setTimeout(() => memNext(), MEM_SLIDE_MS);
+}
+function stopMemTimer() {
+  if (_memTimer) { clearTimeout(_memTimer); _memTimer = null; }
+  if (_memProgressTimer) { clearInterval(_memProgressTimer); _memProgressTimer = null; }
+}
+function memTogglePause() {
+  _memPaused = !_memPaused;
+  const btn = document.getElementById('mem-pause-btn');
+  if (_memPaused) { stopMemTimer(); btn.textContent = '▶ 재생'; }
+  else { startMemTimer(); btn.textContent = '⏸ 일시정지'; }
+}
+
 function openDiaryEditor(existing) {
   _diaryEditCtx = existing ? { id: existing.id } : null;
   _diaryDraftPhotos = existing?.photo_urls ? [...existing.photo_urls] : [];
@@ -5007,7 +5417,9 @@ async function onImportFile(event) {
 /* ── ESC 키로 열린 모달·시트 닫기 ────────────────── */
 document.addEventListener('keydown', (e) => {
   if (e.key !== 'Escape') return;
-  // 우선순위: photo-viewer → modal-overlay 중 가장 위 → sheet-overlay → screen-new
+  // 우선순위: memories(풀스크린) → photo-viewer → modal-overlay 중 가장 위 → sheet-overlay → screen-new
+  const memories = document.getElementById('memories-overlay');
+  if (memories?.classList.contains('show')) { closeMemoriesSheet(); return; }
   const photo = document.getElementById('photo-viewer');
   if (photo?.classList.contains('open')) { closePhotoViewer(); return; }
   const editForm = document.getElementById('item-edit-overlay');
