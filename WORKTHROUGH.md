@@ -10,7 +10,7 @@
 ## 1. 한눈에 보는 현재 상태 (2026-05-22 기준)
 
 - **앱 정체성**: 도쿄 → 유럽 60일까지 커버하는 **멀티트립 오프라인 PWA**.
-- **현재 버전**: `v26` (SW `CACHE_VERSION`, `index.html` 쿼리스트링과 일치 필요)
+- **현재 버전**: `v27` (SW `CACHE_VERSION`, `index.html` 쿼리스트링과 일치 필요)
 - **배포**: GitHub Pages, `main` 브랜치 root. 푸시하면 자동 반영.
 - **호스팅 URL**: GitHub Pages (`<account>.github.io/<repo>/`) — 정확한 URL은 git remote 참고.
 - **데이터**: 로컬 IndexedDB가 source of truth, Supabase는 로그인 시 미러 동기화.
@@ -96,6 +96,7 @@ travel/
 | v24  | 🏙️ 노션 도시 후보 — 유럽 트립 메뉴에서 20개 도시 reference (역할 필터 + 노션 deep link). openTrip seed merge 로직 추가 |
 | v25  | 🆘 비상정보 (12개국+한국, 응급/영사관/카드분실) + ↗ 1일치 일정 공유 (Web Share API + 클립보드 fallback) |
 | v26  | 자율 polish — tripCountdown "N/M일차" + "N일 전 종료" + D-Day 우선순위 정리. v22~v25 stress test 통과 |
+| v27  | 📱 폰 호환성 진단 — 설정 새 섹션, 10개 자동 진단 (PWA·SW·네트워크·저장·캐시·Share·Clipboard·Geo·알림·터치) |
 
 ---
 
@@ -200,3 +201,9 @@ git push
   - 기존: "여행 중" / "${dFromEnd}일 후" (애매함)
   - 개선: "여행 중 · N/M일차" / "${dFromEnd}일 전 종료" / "D-Day 🎉" 우선순위 최상
 - 검증: D-Day 1일/다일, 여행 중 3/6일차, D-3, 4일 전 종료 모두 정상.
+
+### 2026-05-22 — v27 폰 호환성 진단
+- 설정 화면 "📱 폰 호환성 진단" 섹션 추가. 진입 시 자동 실행, 수동 재진단 버튼.
+- 10개 항목: PWA 설치 여부 / Service Worker / 네트워크 online·offline / Storage 사용량 (사용 MB / 할당 MB) / 캐시 개수 / Web Share API / Clipboard / Geolocation / Notifications 권한 / Touch 지원.
+- 항목별 색상 (✅ ok / ⚠️ warn / ❌ fail). 사용자가 비행기 모드 켠 뒤 다시 돌리면 SW·네트워크·캐시 상태 진단 가능.
+- 검증: 헤드리스에서 PWA 미설치(warn), SW 활성(ok), 캐시 2개(ok), Share 미지원(warn), 알림 denied(warn), 터치 2점(ok) — 모두 정상 분류. 콘솔 에러 0.

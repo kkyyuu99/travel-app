@@ -1,6 +1,6 @@
 // Travel PWA — Service Worker
 // 캐시 버전을 올리면 모든 사용자가 새 번들을 받습니다.
-const CACHE_VERSION = 'v26';
+const CACHE_VERSION = 'v27';
 const STATIC_CACHE = `travel-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `travel-runtime-${CACHE_VERSION}`;
 
@@ -9,15 +9,15 @@ const PRECACHE_URLS = [
   './',
   './index.html',
   './manifest.json',
-  './js/seed.js?v=26',
-  './js/db.js?v=26',
-  './js/ai.js?v=26',
-  './js/supabase-config.js?v=26',
-  './js/cloud.js?v=26',
-  './js/sync.js?v=26',
-  './js/notion-zip.js?v=26',
-  './js/maps.js?v=26',
-  './js/emergency.js?v=26',
+  './js/seed.js?v=27',
+  './js/db.js?v=27',
+  './js/ai.js?v=27',
+  './js/supabase-config.js?v=27',
+  './js/cloud.js?v=27',
+  './js/sync.js?v=27',
+  './js/notion-zip.js?v=27',
+  './js/maps.js?v=27',
+  './js/emergency.js?v=27',
   './icons/icon.svg',
   './icons/icon-maskable.svg',
   './icons/icon-192.png',

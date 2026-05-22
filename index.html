@@ -808,6 +808,18 @@
   .app-banner button { background: var(--day-color, #4fc3f7); color: #0d1117; border: none; border-radius: 99px; padding: 4px 10px; font-size: 11px; font-weight: 700; cursor: pointer; }
   @keyframes bannerSlide { from { opacity: 0; transform: translate(-50%, -10px); } to { opacity: 1; transform: translate(-50%, 0); } }
 
+  /* ── 폰 진단 행 ──────────────────────────────────── */
+  .diag-row { display: flex; align-items: center; gap: 10px; padding: 9px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; }
+  .diag-row.ok { border-color: rgba(129,199,132,0.3); }
+  .diag-row.warn { border-color: rgba(245,200,66,0.3); background: rgba(245,200,66,0.04); }
+  .diag-row.fail { border-color: rgba(255,138,138,0.35); background: rgba(255,138,138,0.05); }
+  .diag-icon { font-size: 14px; flex-shrink: 0; }
+  .diag-label { font-size: 12px; font-weight: 600; color: var(--text); flex: 1; }
+  .diag-value { font-size: 11px; color: var(--muted); flex-shrink: 0; font-family: ui-monospace, SFMono-Regular, monospace; }
+  .diag-row.ok .diag-value { color: #81c784; }
+  .diag-row.warn .diag-value { color: #f5c842; }
+  .diag-row.fail .diag-value { color: #ff8a8a; }
+
   /* ── 비상정보 카드 ───────────────────────────────── */
   .em-section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px; }
   .em-section-head { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; margin-bottom: 10px; }
@@ -1240,6 +1252,18 @@
         <input type="password" class="field-input" id="op-key-openai" placeholder="sk-..." autocomplete="off">
       </div>
       <button class="primary-btn" onclick="saveOperatorKeys()">중앙 키 저장</button>
+    </div>
+
+    <!-- 폰 호환성 진단 -->
+    <div>
+      <div class="section-title">📱 폰 호환성 진단</div>
+      <div style="font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:10px">
+        도쿄·유럽 출발 전에 이 폰에서 무엇이 되고 안 되는지 확인해보세요. 비행기 모드에서 한 번 켜본 뒤 진단 다시 돌리면 오프라인 상태도 확인 가능.
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
+        <button class="secondary-btn" style="flex:1" onclick="runDeviceDiagnostics()">🔍 진단 다시 실행</button>
+      </div>
+      <div id="diag-list" style="display:flex;flex-direction:column;gap:6px"></div>
     </div>
 
     <!-- 정보 -->
@@ -1909,15 +1933,15 @@
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-<script src="js/supabase-config.js?v=26"></script>
-<script src="js/cloud.js?v=26"></script>
-<script src="js/seed.js?v=26"></script>
-<script src="js/db.js?v=26"></script>
-<script src="js/ai.js?v=26"></script>
-<script src="js/sync.js?v=26"></script>
-<script src="js/notion-zip.js?v=26"></script>
-<script src="js/maps.js?v=26"></script>
-<script src="js/emergency.js?v=26"></script>
+<script src="js/supabase-config.js?v=27"></script>
+<script src="js/cloud.js?v=27"></script>
+<script src="js/seed.js?v=27"></script>
+<script src="js/db.js?v=27"></script>
+<script src="js/ai.js?v=27"></script>
+<script src="js/sync.js?v=27"></script>
+<script src="js/notion-zip.js?v=27"></script>
+<script src="js/maps.js?v=27"></script>
+<script src="js/emergency.js?v=27"></script>
 <script>
 /* ── DATA (현재 열린 여행에서 동적으로 채워짐) ── */
 let TRIP = null;          // 현재 열린 여행 객체 (IndexedDB에서)
@@ -4213,6 +4237,127 @@ async function openSettings() {
   document.getElementById('key-gmaps').value = (await TripDB.settings.get('googleMapsApiKey', '')) || '';
   document.getElementById('home-currency').value = await TripDB.settings.get('homeCurrency', 'KRW');
   showScreen('settings');
+  // 진단 자동 실행 (비동기)
+  runDeviceDiagnostics();
+}
+
+/* ── 폰 호환성 진단 ───────────────────────────────── */
+async function runDeviceDiagnostics() {
+  const list = document.getElementById('diag-list');
+  if (!list) return;
+  list.innerHTML = '<div style="font-size:11px;color:var(--muted);padding:8px 12px">진단 중...</div>';
+  const rows = [];
+
+  // 1) PWA standalone
+  const isStandalone = window.matchMedia && (matchMedia('(display-mode: standalone)').matches || matchMedia('(display-mode: fullscreen)').matches);
+  const iosStandalone = window.navigator.standalone === true;
+  rows.push({
+    label: 'PWA 설치 (홈화면)',
+    ok: isStandalone || iosStandalone,
+    warn: !isStandalone && !iosStandalone,
+    value: (isStandalone || iosStandalone) ? '설치됨' : '브라우저 탭 — 홈 추가 권장',
+  });
+
+  // 2) Service Worker
+  let swActive = false, swVer = '?';
+  if ('serviceWorker' in navigator) {
+    try {
+      const reg = await navigator.serviceWorker.getRegistration();
+      swActive = !!(reg && reg.active);
+    } catch(_){}
+  }
+  rows.push({
+    label: 'Service Worker (오프라인)',
+    ok: swActive,
+    fail: !swActive,
+    value: swActive ? '활성' : '비활성',
+  });
+
+  // 3) online/offline
+  rows.push({
+    label: '네트워크',
+    ok: navigator.onLine,
+    warn: !navigator.onLine,
+    value: navigator.onLine ? '온라인' : '오프라인 (테스트 OK)',
+  });
+
+  // 4) Storage 사용량
+  let storageStr = '확인 불가';
+  let storageOk = true;
+  if (navigator.storage?.estimate) {
+    try {
+      const est = await navigator.storage.estimate();
+      const usedMB = est.usage ? (est.usage / 1048576) : 0;
+      const quotaMB = est.quota ? (est.quota / 1048576) : 0;
+      storageStr = `${usedMB.toFixed(1)} / ${quotaMB.toFixed(0)} MB`;
+      storageOk = usedMB < quotaMB * 0.8;
+    } catch(_){}
+  }
+  rows.push({ label: '저장 공간 (IndexedDB·캐시)', ok: storageOk, warn: !storageOk, value: storageStr });
+
+  // 5) 캐시 크기
+  let cacheKeys = [];
+  if (window.caches) {
+    try { cacheKeys = await caches.keys(); } catch(_){}
+  }
+  rows.push({
+    label: '캐시 (앱 셸 + API)',
+    ok: cacheKeys.length > 0,
+    warn: cacheKeys.length === 0,
+    value: cacheKeys.length > 0 ? `${cacheKeys.length}개 캐시` : '비어있음 — 한 번 켜야 채워짐',
+  });
+
+  // 6) Web Share API
+  rows.push({
+    label: '시스템 공유 (↗ 1일치 공유)',
+    ok: typeof navigator.share === 'function',
+    warn: typeof navigator.share !== 'function',
+    value: typeof navigator.share === 'function' ? '지원 (카톡 등으로 직접)' : '미지원 — 클립보드 fallback',
+  });
+
+  // 7) Clipboard
+  rows.push({
+    label: '클립보드 (복사 fallback)',
+    ok: !!navigator.clipboard?.writeText,
+    fail: !navigator.clipboard?.writeText,
+    value: navigator.clipboard?.writeText ? '지원' : '미지원',
+  });
+
+  // 8) Geolocation
+  rows.push({
+    label: '위치 정보 (지도 현위치)',
+    ok: 'geolocation' in navigator,
+    warn: !('geolocation' in navigator),
+    value: 'geolocation' in navigator ? '지원' : '미지원',
+  });
+
+  // 9) Notifications (선택)
+  rows.push({
+    label: '알림 권한 (향후)',
+    ok: 'Notification' in window && Notification.permission === 'granted',
+    warn: 'Notification' in window && Notification.permission !== 'granted',
+    fail: !('Notification' in window),
+    value: 'Notification' in window ? `권한: ${Notification.permission}` : '미지원',
+  });
+
+  // 10) Touch device
+  const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+  rows.push({
+    label: '터치 기기',
+    ok: isTouch,
+    warn: !isTouch,
+    value: isTouch ? `예 (${navigator.maxTouchPoints || 1}점 터치)` : '아니오 (데스크탑)',
+  });
+
+  list.innerHTML = rows.map(r => {
+    const cls = r.fail ? 'fail' : r.warn ? 'warn' : 'ok';
+    const icon = r.fail ? '❌' : r.warn ? '⚠️' : '✅';
+    return `<div class="diag-row ${cls}">
+      <span class="diag-icon">${icon}</span>
+      <span class="diag-label">${escapeHtml(r.label)}</span>
+      <span class="diag-value">${escapeHtml(r.value)}</span>
+    </div>`;
+  }).join('');
 }
 
 function selectProvider(prov) {
