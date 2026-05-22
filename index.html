@@ -808,6 +808,26 @@
   .app-banner button { background: var(--day-color, #4fc3f7); color: #0d1117; border: none; border-radius: 99px; padding: 4px 10px; font-size: 11px; font-weight: 700; cursor: pointer; }
   @keyframes bannerSlide { from { opacity: 0; transform: translate(-50%, -10px); } to { opacity: 1; transform: translate(-50%, 0); } }
 
+  /* ── 노션 도시 후보 카드 ─────────────────────────── */
+  .city-chip {
+    display: flex; flex-direction: column; gap: 4px;
+    padding: 10px 12px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    cursor: pointer; text-decoration: none; color: inherit;
+    transition: border-color 0.15s, transform 0.05s;
+  }
+  .city-chip:active { transform: scale(0.98); }
+  .city-chip:hover { border-color: var(--day-color, #4fc3f7); }
+  .city-chip-head { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; color: var(--text); }
+  .city-chip-flag { font-size: 14px; }
+  .city-chip-meta { font-size: 10px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+  .city-chip-meta .role { padding: 1px 6px; border-radius: 99px; background: color-mix(in srgb, var(--day-color, #4fc3f7) 15%, transparent); color: var(--day-color, #4fc3f7); font-weight: 600; }
+  .city-filter-chip {
+    padding: 4px 10px; border-radius: 99px; font-size: 11px; font-weight: 600;
+    background: var(--surface2); border: 1px solid var(--border); color: var(--muted); cursor: pointer;
+  }
+  .city-filter-chip.active { background: color-mix(in srgb, var(--day-color, #4fc3f7) 18%, transparent); border-color: var(--day-color, #4fc3f7); color: var(--day-color, #4fc3f7); }
+
   /* ── 추억 모드 (Memories) ────────────────────────── */
   #memories-overlay {
     position: fixed; inset: 0; z-index: 200;
@@ -1363,6 +1383,10 @@
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
     🌍 국가별 정보
   </div>
+  <div class="menu-item" onclick="openNotionCities()">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+    🏙️ 노션 도시 후보
+  </div>
   <div class="menu-item" onclick="openBulkAiFill()">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4.5L6 21l1.5-7.5L2 9h7z"/></svg>
     🪄 빈 Day 일괄 AI 채우기
@@ -1532,6 +1556,19 @@
     <div class="modal-title">🌍 국가별 정보</div>
     <div class="modal-sub">출처: 노션 메인 페이지의 9개국 DB. 자동차 여행 중 운전·결제·통화 빠르게 참조하세요.</div>
     <div id="country-tips-body" style="display:flex;flex-direction:column;gap:10px"></div>
+  </div>
+</div>
+
+<!-- ── 노션 도시 후보 모달 ──────────────────────────── -->
+<div class="modal-overlay" id="notion-cities-modal" onclick="if(event.target===this)closeNotionCities()">
+  <div class="modal" style="position:relative; max-width:560px; max-height:85vh; overflow-y:auto">
+    <button class="icon-btn modal-close" onclick="closeNotionCities()" aria-label="닫기">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </button>
+    <div class="modal-title">🏙️ 노션 도시 후보</div>
+    <div class="modal-sub" id="notion-cities-sub">출처: 노션 유럽_도시 DB. 도시명을 탭하면 노션에서 상세 페이지가 열려요.</div>
+    <div class="city-filter-chips" id="city-filter-chips" style="display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 12px"></div>
+    <div id="notion-cities-body" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px"></div>
   </div>
 </div>
 
@@ -1835,14 +1872,14 @@
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-<script src="js/supabase-config.js?v=23"></script>
-<script src="js/cloud.js?v=23"></script>
-<script src="js/seed.js?v=23"></script>
-<script src="js/db.js?v=23"></script>
-<script src="js/ai.js?v=23"></script>
-<script src="js/sync.js?v=23"></script>
-<script src="js/notion-zip.js?v=23"></script>
-<script src="js/maps.js?v=23"></script>
+<script src="js/supabase-config.js?v=24"></script>
+<script src="js/cloud.js?v=24"></script>
+<script src="js/seed.js?v=24"></script>
+<script src="js/db.js?v=24"></script>
+<script src="js/ai.js?v=24"></script>
+<script src="js/sync.js?v=24"></script>
+<script src="js/notion-zip.js?v=24"></script>
+<script src="js/maps.js?v=24"></script>
 <script>
 /* ── DATA (현재 열린 여행에서 동적으로 채워짐) ── */
 let TRIP = null;          // 현재 열린 여행 객체 (IndexedDB에서)
@@ -3626,6 +3663,14 @@ async function openTrip(id) {
   const trip = await TripDB.trips.get(id);
   if (!trip) { showToast('여행을 찾을 수 없어요'); return; }
 
+  // 시드 트립이면 최신 seed의 notion_metadata 보충 (사용자 편집은 보존 — 트립 값이 seed를 덮음)
+  const seedNotion = (trip.id === 'europe-2027-60d' ? window.EUROPE_SEED?.notion_metadata
+                    : trip.id === 'tokyo-2026-05' ? window.TOKYO_SEED?.notion_metadata
+                    : null);
+  if (seedNotion) {
+    trip.notion_metadata = { ...seedNotion, ...(trip.notion_metadata || {}) };
+  }
+
   // 로그인 상태 + cloud_id 있으면 사용자 상태 1회 풀-머지 (다른 기기에서 체크한 것 반영)
   if (_currentUser && trip.cloud_id && window.Sync?.enabled) {
     try {
@@ -4976,6 +5021,64 @@ function openCountryTips() {
 }
 function closeCountryTips() {
   document.getElementById('country-tips-modal').classList.remove('open');
+}
+
+/* ── 노션 도시 후보 ───────────────────────────────── */
+let _cityFilter = 'all';
+function openNotionCities() {
+  document.getElementById('trip-menu').classList.remove('open');
+  if (!TRIP) return;
+  const cities = TRIP.notion_metadata?.notion_cities || [];
+  const sub = document.getElementById('notion-cities-sub');
+  const chips = document.getElementById('city-filter-chips');
+  const body = document.getElementById('notion-cities-body');
+  if (cities.length === 0) {
+    sub.textContent = '';
+    chips.innerHTML = '';
+    body.innerHTML = `<div style="grid-column:1/-1;padding:20px;text-align:center;color:var(--muted);font-size:13px">이 여행엔 노션 도시 데이터가 없어요.</div>`;
+  } else {
+    sub.innerHTML = `출처: <a href="https://www.notion.so/15fc30118cdf82628ba9012d4e8a077a" target="_blank" style="color:var(--day-color,#4fc3f7);text-decoration:none">노션 유럽_도시 DB</a> · ${cities.length}개 도시. 탭하면 노션에서 상세 페이지 열려요.`;
+    // 필터: 역할별
+    const roles = [...new Set(cities.map(c => c.role).filter(Boolean))];
+    chips.innerHTML = `<div class="city-filter-chip ${_cityFilter==='all'?'active':''}" onclick="filterCities('all')">전체 ${cities.length}</div>` +
+      roles.map(r => {
+        const count = cities.filter(c => c.role === r).length;
+        return `<div class="city-filter-chip ${_cityFilter===r?'active':''}" onclick="filterCities('${escapeHtml(r)}')">${escapeHtml(r)} ${count}</div>`;
+      }).join('');
+    renderNotionCityList(cities);
+  }
+  document.getElementById('notion-cities-modal').classList.add('open');
+}
+function filterCities(role) {
+  _cityFilter = role;
+  if (!TRIP) return;
+  const cities = TRIP.notion_metadata?.notion_cities || [];
+  const chips = document.getElementById('city-filter-chips');
+  const roles = [...new Set(cities.map(c => c.role).filter(Boolean))];
+  chips.innerHTML = `<div class="city-filter-chip ${_cityFilter==='all'?'active':''}" onclick="filterCities('all')">전체 ${cities.length}</div>` +
+    roles.map(r => {
+      const count = cities.filter(c => c.role === r).length;
+      return `<div class="city-filter-chip ${_cityFilter===r?'active':''}" onclick="filterCities('${escapeHtml(r)}')">${escapeHtml(r)} ${count}</div>`;
+    }).join('');
+  renderNotionCityList(cities);
+}
+function renderNotionCityList(cities) {
+  const body = document.getElementById('notion-cities-body');
+  const list = _cityFilter === 'all' ? cities : cities.filter(c => c.role === _cityFilter);
+  if (list.length === 0) {
+    body.innerHTML = `<div style="grid-column:1/-1;padding:14px;text-align:center;color:var(--muted);font-size:12px">필터 결과 없음</div>`;
+    return;
+  }
+  body.innerHTML = list.map(c => {
+    const url = c.notion_id ? `https://www.notion.so/${c.notion_id}` : '#';
+    return `<a class="city-chip" href="${url}" target="_blank" rel="noopener">
+      <div class="city-chip-head"><span class="city-chip-flag">${c.flag || '🏙️'}</span><span>${escapeHtml(c.name)}</span></div>
+      <div class="city-chip-meta">${escapeHtml(c.country || '')}${c.role ? ` <span class="role">${escapeHtml(c.role)}</span>` : ''}</div>
+    </a>`;
+  }).join('');
+}
+function closeNotionCities() {
+  document.getElementById('notion-cities-modal').classList.remove('open');
 }
 
 /* ── 빈 Day 일괄 AI 채우기 ──────────────────────── */

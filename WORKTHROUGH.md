@@ -10,7 +10,7 @@
 ## 1. 한눈에 보는 현재 상태 (2026-05-22 기준)
 
 - **앱 정체성**: 도쿄 → 유럽 60일까지 커버하는 **멀티트립 오프라인 PWA**.
-- **현재 버전**: `v23` (SW `CACHE_VERSION`, `index.html` 쿼리스트링과 일치 필요)
+- **현재 버전**: `v24` (SW `CACHE_VERSION`, `index.html` 쿼리스트링과 일치 필요)
 - **배포**: GitHub Pages, `main` 브랜치 root. 푸시하면 자동 반영.
 - **호스팅 URL**: GitHub Pages (`<account>.github.io/<repo>/`) — 정확한 URL은 git remote 참고.
 - **데이터**: 로컬 IndexedDB가 source of truth, Supabase는 로그인 시 미러 동기화.
@@ -92,6 +92,7 @@ travel/
 | v21  | 모바일 폴리시 — 모달/입력 수정 + SW 업데이트 프롬프트 + a11y |
 | v22  | Sticky Now 바 (오늘 Day 상단 고정) + 시간 파싱 버그 수정 + 캐시 정돈 |
 | v23  | 🎞️ 추억 모드 — 트립 종료 후 자동 슬라이드쇼 (커버·다이어리·체크·지출·클로징) |
+| v24  | 🏙️ 노션 도시 후보 — 유럽 트립 메뉴에서 20개 도시 reference (역할 필터 + 노션 deep link). openTrip seed merge 로직 추가 |
 
 ---
 
@@ -175,3 +176,10 @@ git push
 - **v23 (추억 모드)**: 트립 메뉴 "🎞️ 추억 모드" → 풀스크린 슬라이드쇼 (cover → diary entries → checks summary → expenses summary → closing). 6초 자동, 좌우 탭, 일시정지, ESC 닫기. 트립 종료 후뿐 아니라 진행 중에도 미리보기 가능.
 - 검증: 모바일 375×812에서 sticky 36px 정상, 추억 슬라이드 4개 (도쿄 비로그인 시 cover/checks/expenses/closing — diary는 클라우드 only), 콘솔 에러 0.
 - **다음 세션 주의**: v24 (27개 도시 lodgings 시드)는 SESSION_HISTORY §14에 적힌 그대로 보류 — 노션 `유럽_도시 DB` (15fc3011...) + `숙박전용` relation 쿼리 필요. 도쿄 여행 후 진행.
+
+### 2026-05-22 — v24 노션 도시 후보 (유럽 트립 보강)
+- 원래 v24 "27개 lodgings 시드"는 노션 숙박전용 DB가 거의 비어있고(1행), 23개 도시를 빈 lodging row로 박는 게 사용자 부담 큼.
+- 대신 country_tips 패턴 따라 **트립 메뉴 "🏙️ 노션 도시 후보"** 모달로 전환. 20개 도시 (스페인 17 + 지블롤터 + 프랑스 + 슬로베니아), 역할별 필터 (베이스캠프/경유지/반나절), 카드 탭하면 노션 페이지 deep link 열림.
+- `openTrip()` 시 seed의 `notion_metadata`를 트립 객체에 머지하는 라인 추가 — 트립이 IndexedDB에 옛 데이터로 박혀있어도 최신 seed reference 데이터(country_tips, notion_cities 등)는 자동 반영. 사용자 편집은 보존 (trip 값이 seed 덮음).
+- 검증: 모바일 375×812에서 20개 카드, 필터 4개 (전체 20 / 베이스캠프 5 / 경유지 4 / 반나절 11), ESC 닫힘, country-tips 회귀 없음, 콘솔 에러 0.
+- **함정 발견**: 페이지 캐시 갱신이 SW unregister + caches.delete만으로 안 됨. `window.location.replace('...?nocache=...')`로 강제 navigate해야 새 코드 로드. v22~23 검증 때 같은 패턴 사용해도 비슷한 함정 가능.

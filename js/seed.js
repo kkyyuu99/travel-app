@@ -204,6 +204,34 @@ window.EUROPE_SEED = (function () {
         { type: '기타', title: '스위스 하프페어 카드', notes: '교통비 50% 할인. 출발 전 구매.' },
         { type: '기타', title: '국제운전면허증 발급', notes: 'D-30 안에 발급. 한국 운전면허증과 같이 휴대.' },
       ],
+      // 노션 유럽_도시 DB 후보 (사용자 노션 페이지 그대로 — 클릭 시 노션에서 디테일 열기)
+      // 출처: https://www.notion.so/15fc30118cdf82628ba9012d4e8a077a
+      notion_cities: [
+        // 🇪🇸 스페인
+        { name:'마드리드', flag:'🇪🇸', country:'스페인', role:'베이스캠프', notion_id:'364c30118cdf804aa036da32efe14d2a' },
+        { name:'바르셀로나', flag:'🇪🇸', country:'스페인', role:'베이스캠프', notion_id:'33ac30118cdf804fa6eed8ba6f561e6b' },
+        { name:'발렌시아', flag:'🇪🇸', country:'스페인', role:'경유지', notion_id:'33ac30118cdf8058809be3d189337316' },
+        { name:'세비야', flag:'🇪🇸', country:'스페인', role:'베이스캠프', notion_id:'33ac30118cdf809d9e45c0abdc04a266' },
+        { name:'그라나다', flag:'🇪🇸', country:'스페인', role:'베이스캠프', notion_id:'33ac30118cdf80d99ac5fa09984c9b15' },
+        { name:'살라망카', flag:'🇪🇸', country:'스페인', role:'경유지', notion_id:'396c30118cdf8253822d01bda76a0f26' },
+        { name:'세고비아', flag:'🇪🇸', country:'스페인', role:'반나절', notion_id:'0c3c30118cdf8279bd5481bc45dccc7b' },
+        { name:'시체스', flag:'🇪🇸', country:'스페인', role:'반나절', notion_id:'33ac30118cdf80c3a95ef6bafac14d54' },
+        { name:'몬세라트', flag:'🇪🇸', country:'스페인', role:'반나절', notion_id:'33ac30118cdf800c9513f11e9e22d1c1' },
+        { name:'지로나', flag:'🇪🇸', country:'스페인', role:'반나절', notion_id:'33ac30118cdf80978e50cf1dc883320e' },
+        { name:'말라가', flag:'🇪🇸', country:'스페인', role:'경유지', notion_id:'202c30118cdf83e4883f81b1d0f66e72' },
+        { name:'론다', flag:'🇪🇸', country:'스페인', role:'반나절', notion_id:'33ac30118cdf80a58e0cf5e886f3db09' },
+        { name:'빌라노바', flag:'🇪🇸', country:'스페인', role:'반나절', notion_id:'33ac30118cdf80d1a544d955a0921f2e' },
+        { name:'네르하', flag:'🇪🇸', country:'스페인', role:'반나절', notion_id:'2e6c30118cdf83f89c6a81c4f0da3893' },
+        { name:'세테닐', flag:'🇪🇸', country:'스페인', role:'반나절', notion_id:'4cec30118cdf82b38bbf8152fff3a2c5' },
+        { name:'엘체', flag:'🇪🇸', country:'스페인', role:'반나절', notion_id:'33ac30118cdf801e9bd9f27ab4acde1b' },
+        { name:'하얀마을 (안달루시아)', flag:'🇪🇸', country:'스페인', role:'반나절', notion_id:'33ac30118cdf808ba591e0464088b91c' },
+        // 🇬🇮 지블롤터 (영국령)
+        { name:'지블롤터', flag:'🇬🇮', country:'영국령', role:'반나절', notion_id:'80ac30118cdf83a79cc481c6df901e13' },
+        // 🇫🇷 프랑스
+        { name:'파리', flag:'🇫🇷', country:'프랑스', role:'베이스캠프', notion_id:'361c30118cdf8001aae4d82bfdaeabb6' },
+        // 🇸🇮 슬로베니아
+        { name:'류블랴나', flag:'🇸🇮', country:'슬로베니아', role:'경유지', notion_id:'f9dc30118cdf82be88d0015fe68d2dce' },
+      ],
     },
     days,
   };

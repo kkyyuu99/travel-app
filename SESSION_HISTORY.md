@@ -330,6 +330,58 @@
 
 ---
 
+## 12.7. v24 — 노션 도시 후보 (유럽 트립 보강)
+
+### 사용자
+> "ㄱㄱ" — v23 push 직후, 보류 처리했던 v24 진행 요청.
+
+### 결정
+원래 계획 "27개 도시 lodgings 시드"는 노션 검사 결과 비현실적:
+- 숙박전용 DB (collection://32fc3011...)에 1개 행만 — 사용자가 아직 안 채움
+- 23개 도시를 빈 lodging row로 박으면 사용자 부담만 늘림
+
+→ **country_tips 패턴 따라 "노션 도시 후보" reference 모달로 재설계**
+
+### 작업
+- 노션 search로 유럽_도시 DB (collection://530c3011...)에서 23개 도시 페이지 발견
+- 중복 마드리드/템플릿/뉴욕(미국) 제거 → 20개로 정리
+- `js/seed.js` EUROPE_SEED.notion_metadata에 `notion_cities` 추가 (name, flag, country, role, notion_id)
+- 역할별 분류:
+  - **베이스캠프** 5: 마드리드 · 바르셀로나 · 세비야 · 그라나다 · 파리
+  - **경유지** 4: 발렌시아 · 살라망카 · 말라가 · 류블랴나
+  - **반나절** 11: 세고비아 · 시체스 · 몬세라트 · 지로나 · 론다 · 빌라노바 · 네르하 · 세테닐 · 엘체 · 하얀마을 · 지블롤터
+- 트립 메뉴 "🏙️ 노션 도시 후보" 추가
+- `openNotionCities()` + `filterCities()` + `renderNotionCityList()` 함수
+- 모달: 도시 카드 grid (auto-fill 150px), 역할 필터 chip, 카드 탭 시 노션 deep link 새 탭
+
+### 핵심 변경 — openTrip seed merge
+트립이 IndexedDB에 옛 데이터로 박혀있으면 새로 추가한 `notion_cities`가 안 보였음.
+→ [index.html](index.html#L3667) openTrip 시작에 라인 추가:
+
+```js
+const seedNotion = (trip.id === 'europe-2027-60d' ? window.EUROPE_SEED?.notion_metadata
+                  : trip.id === 'tokyo-2026-05' ? window.TOKYO_SEED?.notion_metadata
+                  : null);
+if (seedNotion) {
+  trip.notion_metadata = { ...seedNotion, ...(trip.notion_metadata || {}) };
+}
+```
+
+키 머지 순서: `seed first → trip overrides`. 트립이 가진 키는 보존 (사용자 편집 안 잃음), 트립에 없는 키는 seed에서 채움. **앞으로 seed reference 데이터(bucket_list, country_tips, packing_seed 등) 갱신 시 트립 재시드 불필요.**
+
+### 함정 발견 (캐시 갱신)
+SW unregister + `caches.delete()` 만으로는 페이지 자체가 옛 코드 그대로. `window.location.replace('...?nocache=' + Date.now())` 같은 강제 navigate 필요. v22~v23 검증 때도 비슷한 상황 가능.
+
+### 검증 (모바일 375×812)
+- 20개 도시 카드 렌더 ✅
+- 필터 chip 4개 (전체 20 / 베이스캠프 5 / 경유지 4 / 반나절 11) ✅
+- 첫 카드: 🇪🇸 마드리드 스페인 베이스캠프, href = `https://www.notion.so/364c3011...` ✅
+- ESC로 모달 닫힘 ✅
+- 기존 country-tips 9개국 표시 회귀 없음 ✅
+- 콘솔 에러 0 ✅
+
+---
+
 ## 13. 도쿄 출발 D-4 — 폰 검증 체크리스트 (당시 남긴 것)
 
 > v21 시점에서 사용자에게 남긴 권장 사항. 현재 시점(2026-05-22)에 일부는 완료됐을 수 있음.
