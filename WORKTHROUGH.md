@@ -10,7 +10,7 @@
 ## 1. 한눈에 보는 현재 상태 (2026-05-22 기준)
 
 - **앱 정체성**: 도쿄 → 유럽 60일까지 커버하는 **멀티트립 오프라인 PWA**.
-- **현재 버전**: `v24` (SW `CACHE_VERSION`, `index.html` 쿼리스트링과 일치 필요)
+- **현재 버전**: `v25` (SW `CACHE_VERSION`, `index.html` 쿼리스트링과 일치 필요)
 - **배포**: GitHub Pages, `main` 브랜치 root. 푸시하면 자동 반영.
 - **호스팅 URL**: GitHub Pages (`<account>.github.io/<repo>/`) — 정확한 URL은 git remote 참고.
 - **데이터**: 로컬 IndexedDB가 source of truth, Supabase는 로그인 시 미러 동기화.
@@ -40,7 +40,8 @@ travel/
 │   ├── cloud.js        Supabase 클라이언트 래퍼 — window.Cloud
 │   ├── sync.js         로컬 ↔ 클라우드 동기화. window.Sync
 │   ├── notion-zip.js   Notion export ZIP 임포터
-│   └── maps.js         Google Maps + Leaflet OSM fallback, Day 폴리라인, 미니맵
+│   ├── maps.js         Google Maps + Leaflet OSM fallback, Day 폴리라인, 미니맵
+│   └── emergency.js    countryCode 기반 비상정보 (응급/영사관/카드분실) — v25
 ├── icons/              icon.svg(마스터) + maskable + 192/512 PNG + apple-touch + favicon
 ├── scripts/            아이콘 생성 등 빌드 보조 (Python)
 └── _archive/           v1 시절 백업 (index.v1.html 등) — 삭제 금지
@@ -93,6 +94,7 @@ travel/
 | v22  | Sticky Now 바 (오늘 Day 상단 고정) + 시간 파싱 버그 수정 + 캐시 정돈 |
 | v23  | 🎞️ 추억 모드 — 트립 종료 후 자동 슬라이드쇼 (커버·다이어리·체크·지출·클로징) |
 | v24  | 🏙️ 노션 도시 후보 — 유럽 트립 메뉴에서 20개 도시 reference (역할 필터 + 노션 deep link). openTrip seed merge 로직 추가 |
+| v25  | 🆘 비상정보 (12개국+한국, 응급/영사관/카드분실) + ↗ 1일치 일정 공유 (Web Share API + 클립보드 fallback) |
 
 ---
 
@@ -183,3 +185,10 @@ git push
 - `openTrip()` 시 seed의 `notion_metadata`를 트립 객체에 머지하는 라인 추가 — 트립이 IndexedDB에 옛 데이터로 박혀있어도 최신 seed reference 데이터(country_tips, notion_cities 등)는 자동 반영. 사용자 편집은 보존 (trip 값이 seed 덮음).
 - 검증: 모바일 375×812에서 20개 카드, 필터 4개 (전체 20 / 베이스캠프 5 / 경유지 4 / 반나절 11), ESC 닫힘, country-tips 회귀 없음, 콘솔 에러 0.
 - **함정 발견**: 페이지 캐시 갱신이 SW unregister + caches.delete만으로 안 됨. `window.location.replace('...?nocache=...')`로 강제 navigate해야 새 코드 로드. v22~23 검증 때 같은 패턴 사용해도 비슷한 함정 가능.
+
+### 2026-05-22 — v25 비상정보 카드 + 1일치 공유
+- **🆘 비상정보** (트립 메뉴): `js/emergency.js` 신규 — 12개국 (JP·FR·ES·PT·IT·CH·AT·HU·CZ·GB·GI·SI) 응급/경찰/소방 번호 + 한국 대사관/영사관 전화·주소·24h emergency 번호 + 한국 공통 (영사 콜센터·해외안전여행) + 13개 카드 분실신고 (현대·신한·KB·삼성·하나·롯데·BC·NH·우리·씨티·트래블월렛·VISA·MC). 전부 `tel:` 링크라 폰에서 한 탭으로 전화.
+- **↗ 1일치 공유** (Day 헤더 우측 상단 버튼): `shareCurrentDay()` — Web Share API 우선 (모바일에서 시스템 공유 시트 → 카톡 선택), 실패 시 클립보드 복사 fallback. 텍스트 포맷: `📅 DAY N · 날짜 / 🎯 테마 / 시간·아이콘·제목·서브 · 메모 첫줄`.
+- 캐시 v25 통일, sw.js PRECACHE에 emergency.js 추가.
+- 검증: 도쿄 트립 → 2 섹션 (🇯🇵 일본 + 🇰🇷 한국 공통), 22개 tel 링크, 1일치 공유 텍스트 정상 포맷.
+- **함정 없음**, 콘솔 에러 0.

@@ -808,6 +808,27 @@
   .app-banner button { background: var(--day-color, #4fc3f7); color: #0d1117; border: none; border-radius: 99px; padding: 4px 10px; font-size: 11px; font-weight: 700; cursor: pointer; }
   @keyframes bannerSlide { from { opacity: 0; transform: translate(-50%, -10px); } to { opacity: 1; transform: translate(-50%, 0); } }
 
+  /* ── 비상정보 카드 ───────────────────────────────── */
+  .em-section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px; }
+  .em-section-head { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; margin-bottom: 10px; }
+  .em-section-head .flag { font-size: 18px; }
+  .em-section.urgent { border-color: rgba(255,138,138,0.4); background: rgba(255,138,138,0.06); }
+  .em-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: baseline; padding: 7px 0; border-top: 1px solid var(--border); font-size: 12px; }
+  .em-row:first-of-type { border-top: 0; }
+  .em-row-label { color: var(--muted); }
+  .em-row-tel { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-weight: 700; color: var(--text); text-decoration: none; padding: 3px 8px; border-radius: 6px; background: rgba(79,195,247,0.1); }
+  .em-row-tel.danger { background: rgba(255,138,138,0.15); color: #ff8a8a; }
+  .em-tips { margin-top: 8px; padding: 8px 12px; background: var(--surface2); border-radius: 8px; font-size: 11px; line-height: 1.6; color: var(--muted); }
+  .em-tips ul { margin: 0; padding-left: 16px; }
+  .em-tips li { margin-bottom: 3px; }
+  .em-emb { padding: 8px 0; border-top: 1px solid var(--border); }
+  .em-emb-name { font-size: 12px; font-weight: 700; margin-bottom: 4px; }
+  .em-emb-line { font-size: 11px; color: var(--muted); display: flex; gap: 6px; flex-wrap: wrap; align-items: baseline; margin-bottom: 2px; }
+  .em-cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 6px; }
+  .em-card-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; background: var(--surface2); border-radius: 8px; font-size: 11px; }
+  .em-card-row .name { color: var(--text); font-weight: 600; }
+  .em-card-row a { color: #4fc3f7; text-decoration: none; font-family: ui-monospace, monospace; font-size: 10px; }
+
   /* ── 노션 도시 후보 카드 ─────────────────────────── */
   .city-chip {
     display: flex; flex-direction: column; gap: 4px;
@@ -1387,6 +1408,10 @@
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
     🏙️ 노션 도시 후보
   </div>
+  <div class="menu-item" onclick="openEmergencyInfo()">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    🆘 비상정보
+  </div>
   <div class="menu-item" onclick="openBulkAiFill()">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4.5L6 21l1.5-7.5L2 9h7z"/></svg>
     🪄 빈 Day 일괄 AI 채우기
@@ -1556,6 +1581,18 @@
     <div class="modal-title">🌍 국가별 정보</div>
     <div class="modal-sub">출처: 노션 메인 페이지의 9개국 DB. 자동차 여행 중 운전·결제·통화 빠르게 참조하세요.</div>
     <div id="country-tips-body" style="display:flex;flex-direction:column;gap:10px"></div>
+  </div>
+</div>
+
+<!-- ── 비상정보 모달 ───────────────────────────────── -->
+<div class="modal-overlay" id="emergency-modal" onclick="if(event.target===this)closeEmergencyInfo()">
+  <div class="modal" style="position:relative; max-width:560px; max-height:88vh; overflow-y:auto">
+    <button class="icon-btn modal-close" onclick="closeEmergencyInfo()" aria-label="닫기">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </button>
+    <div class="modal-title">🆘 비상정보</div>
+    <div class="modal-sub">사고 · 도난 · 응급 시 1순위 연락처. 오프라인에서도 항상 표시.</div>
+    <div id="emergency-body" style="display:flex;flex-direction:column;gap:12px;margin-top:6px"></div>
   </div>
 </div>
 
@@ -1872,14 +1909,15 @@
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-<script src="js/supabase-config.js?v=24"></script>
-<script src="js/cloud.js?v=24"></script>
-<script src="js/seed.js?v=24"></script>
-<script src="js/db.js?v=24"></script>
-<script src="js/ai.js?v=24"></script>
-<script src="js/sync.js?v=24"></script>
-<script src="js/notion-zip.js?v=24"></script>
-<script src="js/maps.js?v=24"></script>
+<script src="js/supabase-config.js?v=25"></script>
+<script src="js/cloud.js?v=25"></script>
+<script src="js/seed.js?v=25"></script>
+<script src="js/db.js?v=25"></script>
+<script src="js/ai.js?v=25"></script>
+<script src="js/sync.js?v=25"></script>
+<script src="js/notion-zip.js?v=25"></script>
+<script src="js/maps.js?v=25"></script>
+<script src="js/emergency.js?v=25"></script>
 <script>
 /* ── DATA (현재 열린 여행에서 동적으로 채워짐) ── */
 let TRIP = null;          // 현재 열린 여행 객체 (IndexedDB에서)
@@ -2383,10 +2421,13 @@ function renderTimeline() {
   // Day 1에서만 버킷리스트 표시 (트립 메타데이터에 있을 때)
   const bucketList = (day.day === 1 && TRIP?.notion_metadata?.bucket_list) || null;
   let html = `
-    <div class="day-header fade-up">
+    <div class="day-header fade-up" style="position:relative">
+      <button class="icon-btn" onclick="shareCurrentDay()" aria-label="이 Day 일정 공유" style="position:absolute;top:14px;right:0;width:34px;height:34px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+      </button>
       <div class="badge">DAY ${day.day} · ${day.date}</div>
-      <h2>${day.theme}</h2>
-      <p>${day.desc}</p>
+      <h2 style="padding-right:40px">${day.theme}</h2>
+      <p style="padding-right:40px">${day.desc}</p>
     </div>
     ${bucketList ? `
       <div class="summary-card" style="margin:10px 0 14px;border-color:color-mix(in srgb,var(--day-color) 40%,transparent)">
@@ -5079,6 +5120,115 @@ function renderNotionCityList(cities) {
 }
 function closeNotionCities() {
   document.getElementById('notion-cities-modal').classList.remove('open');
+}
+
+/* ── 비상정보 ──────────────────────────────────────── */
+function openEmergencyInfo() {
+  document.getElementById('trip-menu').classList.remove('open');
+  if (!TRIP) return;
+  const body = document.getElementById('emergency-body');
+  const countries = (typeof getEmergencyForTrip === 'function') ? getEmergencyForTrip(TRIP) : [];
+  const k = window.EMERGENCY_INFO?.korea_global;
+
+  const renderCountry = (c) => {
+    const em = c.emergency || {};
+    const rows = [];
+    if (em.eu_unified && em.eu_unified !== em.medical) rows.push({ label: 'EU 통합', tel: em.eu_unified });
+    if (em.medical) rows.push({ label: '🚑 응급·구급', tel: em.medical, danger: true });
+    if (em.police) rows.push({ label: '👮 경찰', tel: em.police });
+    if (em.fire && em.fire !== em.medical) rows.push({ label: '🚒 소방', tel: em.fire });
+    const emRows = rows.map(r => `
+      <div class="em-row">
+        <span class="em-row-label">${escapeHtml(r.label)}</span>
+        <a class="em-row-tel ${r.danger?'danger':''}" href="tel:${String(r.tel).split(/[\s(]/)[0]}">${escapeHtml(r.tel)}</a>
+      </div>`).join('');
+    const embRows = (c.embassy || []).map(e => `
+      <div class="em-emb">
+        <div class="em-emb-name">🏛️ ${escapeHtml(e.name)}${e.city ? ` <span style="color:var(--muted);font-weight:500">· ${escapeHtml(e.city)}</span>` : ''}</div>
+        <div class="em-emb-line">📞 <a class="em-row-tel" href="tel:${e.tel.replace(/[^+0-9]/g,'')}">${escapeHtml(e.tel)}</a></div>
+        ${e.emergency_tel ? `<div class="em-emb-line">🆘 24h: <a class="em-row-tel danger" href="tel:${e.emergency_tel.replace(/[^+0-9]/g,'')}">${escapeHtml(e.emergency_tel)}</a></div>` : ''}
+        ${e.address ? `<div class="em-emb-line">📍 ${escapeHtml(e.address)}</div>` : ''}
+        ${e.url ? `<div class="em-emb-line"><a href="${e.url}" target="_blank" style="color:#4fc3f7;text-decoration:none">웹사이트 →</a></div>` : ''}
+      </div>`).join('');
+    const tips = (c.local_tips || []).length
+      ? `<div class="em-tips">💡 현지 팁<ul>${c.local_tips.map(t => `<li>${escapeHtml(t)}</li>`).join('')}</ul></div>`
+      : '';
+    return `<div class="em-section urgent">
+      <div class="em-section-head"><span class="flag">${c.flag || '🌍'}</span> ${escapeHtml(c.name)} <span style="font-size:10px;color:var(--muted);font-weight:500">${c.code}</span></div>
+      ${emRows}
+      ${embRows}
+      ${tips}
+    </div>`;
+  };
+
+  const koreaSection = k ? `
+    <div class="em-section">
+      <div class="em-section-head">🇰🇷 한국 (전 세계 공통)</div>
+      <div class="em-row">
+        <span class="em-row-label">${escapeHtml(k.consul_call_center.name)}</span>
+        <a class="em-row-tel" href="tel:${k.consul_call_center.tel.replace(/[^+0-9]/g,'')}">${escapeHtml(k.consul_call_center.tel)}</a>
+      </div>
+      <div class="em-tips" style="margin-top:6px">${escapeHtml(k.consul_call_center.note || '')}<br><a href="${k.safe_travel.url}" target="_blank" style="color:#4fc3f7;text-decoration:none">🌐 ${escapeHtml(k.safe_travel.name)} →</a></div>
+      <div style="margin-top:10px;font-size:12px;font-weight:700;margin-bottom:6px">💳 카드 분실신고</div>
+      <div class="em-cards-grid">
+        ${k.cards.map(c => `<div class="em-card-row"><span class="name">${escapeHtml(c.issuer)}</span><a href="tel:${c.tel.replace(/[^+0-9]/g,'')}">${escapeHtml(c.tel.replace('+82-', '0').replace(/^\+1-/,'+1 '))}</a></div>`).join('')}
+      </div>
+      <div class="em-tips" style="margin-top:8px">⚠️ 도난·분실 대처<ul>${k.insurance_tips.map(t => `<li>${escapeHtml(t)}</li>`).join('')}</ul></div>
+    </div>
+  ` : '';
+
+  let html = countries.map(renderCountry).join('');
+  html += koreaSection;
+  if (countries.length === 0) {
+    html = `<div style="padding:16px;text-align:center;color:var(--muted);font-size:13px">이 여행의 국가 정보가 등록되어 있지 않아요.</div>` + koreaSection;
+  }
+  body.innerHTML = html;
+  document.getElementById('emergency-modal').classList.add('open');
+}
+function closeEmergencyInfo() {
+  document.getElementById('emergency-modal').classList.remove('open');
+}
+
+/* ── 1일치 일정 공유 (텍스트) ────────────────────────── */
+function buildDayShareText(day) {
+  if (!day) return '';
+  const lines = [];
+  lines.push(`📅 DAY ${day.day} · ${day.date || ''}`);
+  if (day.theme) lines.push(`🎯 ${day.theme}`);
+  if (day.desc) lines.push(day.desc);
+  lines.push('');
+  (day.items || []).forEach(it => {
+    const memo = memos && memos[it.id];
+    lines.push(`${it.time || '  '} ${it.icon || '•'} ${it.title}${it.sub ? ' — ' + it.sub : ''}`);
+    if (memo) lines.push(`   📝 ${memo.split('\n')[0]}`);
+  });
+  if (TRIP?.name) {
+    lines.push('');
+    lines.push(`— ${TRIP.emoji || ''} ${TRIP.name}`.trim());
+  }
+  return lines.join('\n');
+}
+async function shareCurrentDay() {
+  const day = (DAYS || []).find(d => d.day === activeDay);
+  if (!day) { showToast('Day 없음'); return; }
+  const text = buildDayShareText(day);
+  const title = `DAY ${day.day} · ${day.theme || ''}`.trim();
+  try {
+    if (navigator.share) {
+      await navigator.share({ title, text });
+      showToast('📤 공유됨');
+      return;
+    }
+  } catch (e) {
+    if (e && e.name === 'AbortError') return; // 사용자가 취소
+  }
+  // fallback: 클립보드
+  try {
+    await navigator.clipboard.writeText(text);
+    showToast('📋 일정 복사됨 — 카카오톡 등에 붙여넣기');
+  } catch (e) {
+    showToast('복사 실패: ' + (e.message || ''));
+  }
 }
 
 /* ── 빈 Day 일괄 AI 채우기 ──────────────────────── */
